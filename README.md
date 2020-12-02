@@ -8,11 +8,11 @@
 语法分析器好像要先要把上下文无关文法构造出来
 这个还是挺复杂的，就比如 
 
-`statements => statement+statemens ｜ null
+`statements => statement+statemens ｜ null`
 
- statement  => if......
+`statement  => if......`
  
-            => while......`
+`           => while......`
             
       
 这样感觉有好多 我感觉可以先不把所有rust语法都实现。。有的太复杂了，就先把基本的语法实现
