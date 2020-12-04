@@ -72,10 +72,12 @@ void getToken() //
         token[n]='\0';
     }
     n=0;
-    currentToken = program[p++];
+    currentToken = program[p];
+    p+=1;
     nextToken = program[p];
     while(currentToken == ' '|| currentToken == '\t'){
         currentToken = program[p++];
+        nextToken = program[p];
     }
     if(currentToken == '\n'){
         line++;
@@ -130,7 +132,7 @@ void getToken() //
         }while(currentToken!='*'||nextToken!='/');
         return;
     }
-    else if(currentToken=='/'&& nextToken=='/')
+    else if((currentToken=='/')&&(nextToken=='/'))
     {
     
         do{
