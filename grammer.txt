@@ -1,0 +1,185 @@
+Grammar for RUST
+=================
+
+e = empty string
+\ is used wherever the symbols [] () or | is used as a part of EBNF.
+
+Basic
+------
+
+<Program> -> <FunctionDeclarations><FunctionDefinitions><Main>
+<FunctionDeclarations> -> <FunctionDeclaration> <FunctionDeclarations>
+                        | e
+<FunctionDefinitions> -> <FunctionDefinition> <FunctionDefinitions>
+                        | e
+<Main> -> fn main() {<Statements>}
+<Statements> -> <Statement>;<Statements>
+              | e
+<Statement> ->  <DeclarationStatement>
+              | <ExpressionStatement>
+              | <AssignmentExpression>
+              | <TypeExpression>
+<DeclarationStatement> -> let <VariableDefinition>
+                        | let <VariableDefinition> : <DataType>
+                        | let <VariableDefinition> = <LiteralExpression>
+                        | let <VariableDefinition> : <DataType> = <LiteralExpression>                       
+
+<VariableDefinition> -> <Variable>
+                      | mut <Variable>
+<ExpressionStatement> -> <LiteralExpression>
+                       | <BlockExpression>
+                       | <LogicalOrExpression>
+                       | <GroupedExpression>
+                       | <FunctionCall>
+                       | <CycleExpression>
+                       | <ContinueExpression>
+                       | <BreakExpression>
+                       | <IfExpression>
+                       | <ReturnExpression>
+
+<TypeExpression> -> type <Identifier> = <Identifier>
+<BlockExpression> -> { <Statements> }
+<ReturnExpression> -> return <ExpressionStatement>
+<GroupedExpression> -> ( <ExpressionStatement> )
+<ContinueExpression> -> continue
+<BreakExpression> -> break
+
+<LiteralExpression> -> <CHAR_STR_LITERAL>
+                     | <INTEGER_LITERAL>
+                     | <FLOAT_LITERAL>
+                     | <BOOLEAN_LITERAL>
+<DataType> -> i16
+            | u16
+            | f32
+            | bool
+            | char
+
+
+<Variable> -> <Identifier>
+
+
+Literals and Variables
+---------------------
+
+<CHAR_STR_LITERAL> -> ' [A-Za-z] ' | e
+<INTEGER_LITERAL> -> [0-9] <INTEGER_LITERAL> | e
+<FLOAT_LITERAL> -> <INTEGER_LITERAL>.<INTEGER_LITERAL>
+<BOOLEAN_LITERAL> -> false
+                   | true
+<Identifier> -> <IdentifierHead><IdentifierContent> | e
+<IdentifierHead> -> [A-Za-z_]
+<IdentifierContent> -> <IdentifierHead><IdentifierContent> | [0-9]<IdentifierContent> | e 
+
+Cycle Statement
+--------------
+
+<CycleExpression> -> <WhileExpression> | <ForExpression> | <LoopExpression>
+<WhileExpression> -> while <ExpressionStatement> <BlockExpression>
+<ForExpression> -> for <Identifier> in <ShiftExpression> .. <ShiftExpression> <BlockExpression>
+<LoopExpression> -> loop <BlockExpression>
+
+Conditional Statement
+----------------------
+
+<IfExpression> -> if <ExpressionStatement>  <BlockExpression>
+                | if <ExpressionStatement>  <BlockExpression> else <IfExpression>
+                | if <ExpressionStatement>  <BlockExpression> else <IfExpression> else <BlockExpression>
+
+
+Function Statement
+-------------------
+<FunctionDeclaration> -> fn <FunctionIdentifier> (<ParameterList>);
+
+<FunctionDefinition> -> fn <FunctionIdentifier> (<ParameterList>) <BlockExpression>
+                |  fn <FunctionIdentifier> (<ParameterList>) -> <DataType> <BlockExpression>
+
+<ParameterList> -><Variable>: <DataType>,<ParameterList>
+                  | e
+<FunctionCall> -> <FunctionIdentifier> (<CallParameterList>)
+
+<CallParameterList> -> <Variable>,<ParameterList>
+                       | <LiteralExpression>,<ParameterList>
+                       | e
+
+<FunctionIdentifier> -> <Identifier>
+
+
+Operator Assignments
+---------------------
+The given operator precedence follows: (High -> Low)
+()
+!
+* / %
++ -
+<< >>
+< <= >= >
+== !=
+&
+^
+|
+&&
+||
+*=
+= /= %= += -= <<= >>= &= ^= |=
+
+
+
+<AssignmentExpression> -> <LogicalOrExpression>
+                         | <Variable> <AssignmentOperator> <LogicalOrExpression>
+
+<AssignmentOperator> -> =
+                       | *=
+                       | /=
+                       | %=
+                       | +=
+                       | -=
+                       | <<=
+                       | >>=
+                       | &=
+                       | ^=
+                       | |=
+
+<LogicalOrExpression> -> <LogicalAndExpression>
+                          | <LogicalOrExpression> || <LogicalAndExpression>
+
+<LogicalAndExpression> -> <InclusiveOrExpression>
+                           | <LogicalAndExpression> && <InclusiveOrExpression>
+
+<InclusiveOrExpression> -> <ExclusiveOrExpression>
+                            | <InclusiveOrExpression> | <ExclusiveOrExpression>
+
+<ExclusiveOrExpression> -> <AndExpression>
+                            | <ExclusiveOrExpression> ^ <AndExpression>
+
+<AndExpression> -> <EqualityExpression>
+                   | <AndExpression> & <EqualityExpression>
+
+<EqualityExpression> -> <RelationalExpression>
+                        | <EqualityExpression> == <RelationalExpression>
+                        | <EqualityExpression> != <RelationalExpression>
+
+<RelationalExpression> -> <ShiftExpression>
+                          | <RelationalExpression> < <ShiftExpression>
+                          | <RelationalExpression> > <ShiftExpression>
+                          | <RelationalExpression> <= <ShiftExpression>
+                          | <RelationalExpression> >= <ShiftExpression>
+
+<ShiftExpression> -> <AdditiveExpression>
+                     | <ShiftExpression> << <AdditiveExpression>
+                     | <ShiftExpression> >> <AdditiveExpression>
+
+<AdditiveExpression> -> <MultiplicativeExpression>
+                        | <AdditiveExpression> + <MultiplicativeExpression>
+                        | <AdditiveExpression> - <MultiplicativeExpression>
+
+<MultiplicativeExpression> -> <NotExpression>
+                            | <NotExpression> * <NotExpression>
+                            | <NotExpression> / <NotExpression>
+                            | <NotExpression> % <NotExpression>
+                            
+<NotExpression> -> !<PrimaryExpression>
+                | <PrimaryExpression>
+
+<PrimaryExpression> -> <Variable>
+                       | <LiteralExpression>
+                       | ( <LogicalOrExpression> )
