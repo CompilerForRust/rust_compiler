@@ -6,70 +6,69 @@ using namespace std;
 
 enum class node_type
 {
-  Program,
+    Program,                        //根节点
 
-  FunctionDeclarations,
-  FunctionDefinitions,
-  Main,
+    FunctionDeclarations,           //多个函数声明
+    FunctionDefinitions,            //多个函数定义
+    Main,
 
-  FunctionDeclaration,
-  FunctionDefinition,
+    FunctionDeclaration,            //单个函数
+    FunctionDefinition,
 
-  Statements,
-  Statement,
+    Statements,                     //函数过程
+    Statement,                      //语句
 
-  DeclarationStatement,
-  ExpressionStatement,
-  AssignmentExpression,
-  TypeExpression,
+    DeclarationStatement,           //声明语句
+    ExpressionStatement,
+    AssignmentExpression,
+    TypeExpression,
 
-  VariableDefinition,
-  DataType,
-  LiteralExpression,
+    VariableDefinition,             //可变变量
+    DataType,
+    LiteralExpression,
 
-  Variable,
+    Variable,
 
-  BlockExpression,
-  LogicalOrExpression,
-  GroupedExpression,
-  FunctionCall,
-  LoopExpression,
-  ContinueExpression,
-  BreakExpression,
-  IfExpression,
-  ReturnExpression,
+    BlockExpression,
+    LogicalOrExpression,
+    GroupedExpression,
+    FunctionCall,
+    ContinueExpression,
+    BreakExpression,
+    IfExpression,
+    ReturnExpression,
 
-  Identifier,
+    Identifier,                     //标识符
 
-  CHAR_STR_LITERAL,
-  INTEGER_LITERAL,
-  FLOAT_LITERAL,
-  BOOLEAN_LITERAL,
+    CHAR_STR_LITERAL,               //' [A-Za-z] ' | e
+    INTEGER_LITERAL,                //[0-9]*
+    FLOAT_LITERAL,                  //[0-9]*.[0-9]*
+    BOOLEAN_LITERAL,                //true | false
 
-  CycleExpression,
+    CycleExpression,                //循环
 
-  WhileExpression,
-  ForExpression,
-  LoopExpression,
+    WhileExpression,
+    ForExpression,
+    LoopExpression,
 
-  IfExpression,
+    FunctionIdentifier,             //函数名
+    ParameterList,
+    CallParameterList,
 
-  FunctionIdentifier,
-  ParameterList,
-  CallParameterList,
+    AssignmentOperator,             // [*,/,-,+,<<,>>,%,&,^,|]?=
+    LogicalAndExpression,           // &&
+    InclusiveOrExpression,          // |
+    ExclusiveOrExpression,          // ^
+    AndExpression,                  // &
+    EqualityExpression,             // == | !=
+    RelationalExpression,           // [<,>]=?
+    ShiftExpression,                // << | >>
+    AdditiveExpression,             // + | -
+    MultiplicativeExpression,       // * | / | %
+    NotExpression,                  // !
+    PrimaryExpression,              // (?)?
 
-  AssignmentOperator,
-  LogicalAndExpression,
-  InclusiveOrExpression,
-  ExclusiveOrExpression,
-  AndExpression,
-  EqualityExpression,
-  RelationalExpression,
-  ShiftExpression,
-  AdditiveExpression,
-  MultiplicativeExpression,
-  NotExpression,
-  PrimaryExpression
+    PRINTLN, // println!("{}", id);
 };
 class Node
 {
@@ -79,7 +78,7 @@ public:
   vector<unique_ptr<Node>> childNodes;
 
 public:
-  Node(string value, node_type type, vector<unique_ptr<Node>> childNodes);
+  Node(const string value, node_type type, vector<unique_ptr<Node>> childNodes);
   Node();
   ~Node();
   void addChildNode(unique_ptr<Node> childNode);
