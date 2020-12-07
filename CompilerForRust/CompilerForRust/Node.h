@@ -65,6 +65,17 @@ static const char* nodeTypeList[] = {
     "PrimaryExpression",              // (?)?
 
     "PRINTLN", // println!("{}", id);
+
+   "LogicalOrExpressionE",            //消除左递归
+   "LogicalAndExpressionE",
+   "InclusiveOrExpressionE",
+   "ExclusiveOrExpressionE",
+   "AndExpressionE",
+   "EqualityExpressionE",
+   "RelationalExpressionE",
+   "ShiftExpressionE",
+   "AdditiveExpressionE",
+   "MultiplicativeExpressionE",
 };
 
 enum class node_type
@@ -72,7 +83,6 @@ enum class node_type
     Program,                        //根节点
 
     FunctionDefinitions,            //多个函数定义
-    Main,
          
     FunctionDefinition,             //单个函数
 
@@ -130,6 +140,17 @@ enum class node_type
     PrimaryExpression,              // (?)?
 
     PRINTLN, // println!("{}", id);
+
+    LogicalOrExpressionE,            //消除左递归
+    LogicalAndExpressionE,          
+    InclusiveOrExpressionE,          
+    ExclusiveOrExpressionE,          
+    AndExpressionE,                  
+    EqualityExpressionE,             
+    RelationalExpressionE,       
+    ShiftExpressionE,                
+    AdditiveExpressionE,           
+    MultiplicativeExpressionE,
 };
 class Node
 {

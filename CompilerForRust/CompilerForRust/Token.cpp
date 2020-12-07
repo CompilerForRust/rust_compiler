@@ -198,6 +198,12 @@ token_type Token::get_type()
 	else if (lexeme == "/") {
 		return token_type::SLASH;
 	}
+	else if (lexeme == "%") {
+	return token_type::PERCENT;
+	}
+	else if (lexeme == "%=") {
+	return token_type::PERCENTEQUAL;
+	}
 	else if (lexeme == "+=") {
 	return token_type::PLUSEQUAL;
 	}
@@ -224,6 +230,9 @@ token_type Token::get_type()
 	}
 	else if (lexeme == "\"") {
 		return token_type::QUOTES;
+	}
+	else if (lexeme == "'") {
+	return token_type::SINGLEQUOTES;
 	}
 	else if (lexeme == ",") {
 		return token_type::COMMA;
@@ -276,10 +285,42 @@ token_type Token::get_type()
 	else if (lexeme == "->") {
 	return token_type::LOGICAND;
 	}
+	else if (lexeme == "!") {
+	return token_type::NOT;
+	}
+	else if (lexeme == "!=") {
+	return token_type::NOTEQUAL;
+	}
+	else if (lexeme == "^") {
+	return token_type::XOR;
+	}
+	else if (lexeme == "^=") {
+	return token_type::XOREQUAL;
+	}
+	else if (lexeme == ":") {
+	return token_type::COLON;
+	}
+	else if (lexeme == "i16") {
+	return token_type::I16;
+	}
+	else if (lexeme == "u16") {
+	return token_type::U16;
+	}
+	else if (lexeme == "char") {
+	return token_type::CHAR;
+	}
+	else if (lexeme == "bool") {
+	return token_type::BOOL;
+	}
+	else if (lexeme == "f32") {
+	return token_type::F32;
+	}
 	else if (lexeme == "println!") {
 		return token_type::PRINTLN;
 	}
-
+	else if (lexeme.size()==3&& lexeme[0] == '\''&& lexeme[2] == '\'') {
+	return token_type::CHARACTER;
+    }
 	else if (is_correct_identifier(lexeme)) {
 		return token_type::IDENTIFIER;
 	}

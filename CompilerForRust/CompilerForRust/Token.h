@@ -7,107 +7,121 @@ static const char* tokenTypeList[] =
 {
 	"NUMBER",					//Êý×Ö
 	"DOUBLE_NUMBER",			//¸¡µãÊý
+	"CHARACTER",				//×Ö·û
 	"IDENTIFIER",				//±êÊ¶·û
-	"COMMENT",				//×¢ÊÍ "//"
-	
+	"COMMENT",					//×¢ÊÍ "//"
+
 	"UNDERSCORE",				//"_"
-	"ABSTRACT",				//"abstract"
-	"ALIGNOF",				//"alignof"
+	"ABSTRACT",					//"abstract"
+	"ALIGNOF",					//"alignof"
 	"AS",						//"as"
 	"BECOME",					//"become"
-	"BOX",					//"box"
+	"BOX",						//"box"
 	"BREAK",					//"break"
 	"CONST",					//"const"
-	"CONTINUE",				//"continue"
+	"CONTINUE",					//"continue"
 	"CRATE",					//"crate"
 	"DO",						//"do"
-	"ELSE",					//"else"
-	"ENUM",					//"enum"
+	"ELSE",						//"else"
+	"ENUM",						//"enum"
 	"EXTREN",					//"extern"
 	"FALSE",					//"false"
 	"FINAL",					//"final"
 	"FN",						//"fn"
-	"FOR",					//"for"
+	"FOR",						//"for"
 	"IF",						//"if"
-	"IMPL",					//"impl"
+	"IMPL",						//"impl"
 	"IN",						//"in"
-	"LET",					//"let"
-	"LOOP",					//"loop"
+	"LET",						//"let"
+	"LOOP",						//"loop"
 	"MACRO",					//"macro"
 	"MATCH",					//"match"
-	"MOD",					//"mod"
-	"MOVE",					//"move"
-	"MUT",					//"mut"
-	"OFFSETOF",				//"offsetof"
-	"OVERRIDE",				//"override"
-	"PRIV",					//"priv"
-	"PROC",					//"proc"
-	"PUB",					//"pub"
-	"PURE",					//"pure"
-	"REF",					//"ref"
+	"MOD",						//"mod"
+	"MOVE",						//"move"
+	"MUT",						//"mut"
+	"OFFSETOF",					//"offsetof"
+	"OVERRIDE",					//"override"
+	"PRIV",						//"priv"
+	"PROC",						//"proc"
+	"PUB",						//"pub"
+	"PURE",						//"pure"
+	"REF",						//"ref"
 	"RETURN",					//"return"
 	"_SELF",					//"Self"
-	"SELF",					//"self"
+	"SELF",						//"self"
 	"SIZEOF",					//"sizeof"
 	"STATIC",					//"static"
 	"STRUCT",					//"struct"
 	"SUPER",					//"super"
 	"TRAIT",					//"trait"
-	"TRUE",					//"true"
-	"TYPE",					//"type"
+	"TRUE",						//"true"
+	"TYPE",						//"type"
 	"TYPEOF",					//"typeof"
 	"UNSAFE",					//"unsafe"
-	"UNSIZED",				//"unsized"
-	"USE",					//"use"
-	"VIRTUAL",				//"virtual"
+	"UNSIZED",					//"unsized"
+	"USE",						//"use"
+	"VIRTUAL",					//"virtual"
 	"WHERE",					//"where"
 	"WHILE",					//"while"
 	"YIELD",					//"yield"
-	
-	"DOUBLE_POINT",			// ..
-	
-	"SET", // =
-	"EQUALITY", // ==
-	
-	"PLUS",			// +
-	"MINUS",			// -
-	"STAR",			// *
-	"SLASH",			// /
-	"PLUSEQUAL",		// +=
-	"MINUSEQUAL",		// -=
-	"STAREQUAL",		// *=
-	"SLASHEQUAL",		// /=
-	
-	"LPAR",    // (
-	"RPAR",    // )
-	"LBRACE",  // {
-	"RBRACE",  // }
-	
-	"QUOTES",  // "
-	"COMMA",   // ,
-	"SEMICOLON", // ;
-	
-	"MORE",			// >
-	"LESS",			// <
-	"OR",				// |
-	"AND",			// &
-	"MOREEQUAL",		// >=
-	"LESSEQUAL",		// <=
-	"OREQUAL",		// |=
-	"ANDEQUAL",		// &=
-	"RSHIFT",			// >>
-	"RSHIFTEQUAL",	// >>=
-	"LSHIFT",			// <<
-	"LSHIFTEQUAL",	// <<
-	"LOGICOR",		// ||
-	"LOGICAND",		// &&
-	"RETURNTYPE",		// ->
-	
+
+	"DOUBLE_POINT",				// ..
+
+	"SET",						// =
+	"EQUALITY",					// ==
+
+	"PLUS",						// +
+	"MINUS",					// -
+	"STAR",						// *
+	"SLASH",					// /
+	"MOD",						// %
+	"MODEQUAL",					// %=
+	"PLUSEQUAL",				// +=
+	"MINUSEQUAL",				// -=
+	"STAREQUAL",				// *=
+	"SLASHEQUAL",				// /=
+
+	"LPAR",						// (
+	"RPAR",						// )
+	"LBRACE",					// {
+	"RBRACE",					// }
+
+	"QUOTES",					// "
+	"SINGLEQUOTES",				// '
+	"COMMA",					// ,
+	"SEMICOLON",				// ;
+
+	"MORE",						// >
+	"LESS",						// <
+	"OR",						// |
+	"AND",						// &
+	"MOREEQUAL",				// >=
+	"LESSEQUAL",				// <=
+	"OREQUAL",					// |=
+	"ANDEQUAL",					// &=
+	"RSHIFT",					// >>
+	"RSHIFTEQUAL",				// >>=
+	"LSHIFT",					// <<
+	"LSHIFTEQUAL",				// <<
+	"LOGICOR",					// ||
+	"LOGICAND",					// &&
+	"RETURNTYPE",				// ->
+	"NOT",						// !
+	"NOTEQUAL",					// !=
+	"XOR",						// ^
+	"XOREQUAL",					// ^=
+	"COLON",					// :
+	"I16",
+	"U16",
+	"F32",
+	"BOOL",
+	"CHAR",
 	"PRINTLN",
 };
 enum class token_type {
 	NUMBER,					//Êý×Ö
 	DOUBLE_NUMBER,			//¸¡µãÊý
+	CHARACTER,          //×Ö·û
 	IDENTIFIER,				//±êÊ¶·û
 	COMMENT,				//×¢ÊÍ "//"
 
@@ -174,6 +188,8 @@ enum class token_type {
 	MINUS,			// -
 	STAR,			// *
 	SLASH,			// /
+	PERCENT,			// %
+	PERCENTEQUAL,		// %=
 	PLUSEQUAL,		// +=
 	MINUSEQUAL,		// -=
 	STAREQUAL,		// *=
@@ -185,6 +201,7 @@ enum class token_type {
 	RBRACE,  // }
 
 	QUOTES,  // "
+	SINGLEQUOTES,	// '
 	COMMA,   // ,
 	SEMICOLON, // ;
 
@@ -199,11 +216,21 @@ enum class token_type {
 	RSHIFT,			// >>
 	RSHIFTEQUAL,	// >>=
 	LSHIFT,			// <<
-	LSHIFTEQUAL,	// <<
+	LSHIFTEQUAL,	// <<=
 	LOGICOR,		// ||
 	LOGICAND,		// &&
 	RETURNTYPE,		// ->
-	PRINTLN,		
+	NOT,			// !
+	NOTEQUAL,		// !=
+	XOR,			// ^
+	XOREQUAL,		// ^=
+	COLON,			// :
+	I16,
+	U16,
+	F32,
+	BOOL,
+	CHAR,
+	PRINTLN,
 };
 
 class Token

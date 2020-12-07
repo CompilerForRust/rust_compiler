@@ -19,10 +19,10 @@ public:
 	//Node getAst();
 	string eat(token_type type);
 	bool tryEat(token_type type);
+    bool tryEat(token_type type,const int offset);
 
     unique_ptr<Node>Program();                      
     unique_ptr<Node>FunctionDefinitions();        
-    unique_ptr<Node>Main();  
     unique_ptr<Node>FunctionDefinition();
     unique_ptr<Node>Statements();                 
     unique_ptr<Node>Statement();                  
@@ -67,6 +67,17 @@ public:
     unique_ptr<Node>NotExpression();               
     unique_ptr<Node>PrimaryExpression();           
     unique_ptr<Node>PRINTLN();
+
+    unique_ptr<Node>LogicalOrExpressionE();            //ฯ๛ณýื๓ตÝน้
+    unique_ptr<Node>LogicalAndExpressionE();
+    unique_ptr<Node>InclusiveOrExpressionE();
+    unique_ptr<Node>ExclusiveOrExpressionE();
+    unique_ptr<Node>AndExpressionE();
+    unique_ptr<Node>EqualityExpressionE();
+    unique_ptr<Node>RelationalExpressionE();
+    unique_ptr<Node>ShiftExpressionE();
+    unique_ptr<Node>AdditiveExpressionE();
+    unique_ptr<Node>MultiplicativeExpressionE();
 
 	void error(const string message);
 };

@@ -33,14 +33,20 @@ void Lexer::split()
 		if (is_split_symbol(symbol)) {
 			//如果temp_token不为空
 			if (!temp_token.empty()) {
+				char next_sym = *it;
+				if (temp_token == "println" && next_sym == '!')
+				{
+					temp_token += next_sym;
+					it++;
+				}
 				Token* new_token = new Token(temp_token);
 				tokens.push_back(new_token);
-
 				temp_token.clear();
 			}
 			if (symbol != ' ' && symbol != '\n' && symbol != '\t' && symbol != '=' &&
 				symbol != '+' && symbol != '-' && symbol != '*' && symbol != '/' &&
-				symbol != '<' && symbol != '>' && symbol != '|' && symbol != '&'
+				symbol != '<' && symbol != '>' && symbol != '|' && symbol != '&' &&
+				symbol != '%' && symbol != '^' && symbol != '\'' && symbol != '!'
 				)
 			{
 				temp_token = symbol;
@@ -67,7 +73,58 @@ void Lexer::split()
 				}
 
 			}
+      else if (symbol == '\'') {
+				temp_token = symbol;
+				char next_sym = *(it + 1);
+				char next_two_sym = *(it + 2);
+				if (next_two_sym == '\'') {
+					temp_token += next_sym;
+					temp_token += next_two_sym;
+					it += 2;
+				}
+				Token* new_token = new Token(temp_token);
+				tokens.push_back(new_token);
+				temp_token.clear();
+			}
 			else if (symbol == '+') {
+				it++;
+				char next_sym = *it;
+
+				temp_token = symbol;
+				if (next_sym == '=') {
+					temp_token += next_sym;
+					Token* new_token = new Token(temp_token);
+					tokens.push_back(new_token);
+					temp_token.clear();
+				}
+				else {
+					Token* new_token = new Token(temp_token);
+					tokens.push_back(new_token);
+					temp_token.clear();
+					it--;
+				}
+
+			}
+			else if (symbol == '!') {
+				it++;
+				char next_sym = *it;
+
+				temp_token = symbol;
+				if (next_sym == '=') {
+					temp_token += next_sym;
+					Token* new_token = new Token(temp_token);
+					tokens.push_back(new_token);
+					temp_token.clear();
+				}
+				else {
+					Token* new_token = new Token(temp_token);
+					tokens.push_back(new_token);
+					temp_token.clear();
+					it--;
+				}
+
+			}
+			else if (symbol == '^') {
 				it++;
 				char next_sym = *it;
 
@@ -160,6 +217,25 @@ void Lexer::split()
 				}
 
 			}
+			else if (symbol == '%') {
+			it++;
+			char next_sym = *it;
+
+			temp_token = symbol;
+			if (next_sym == '=') {
+				temp_token += next_sym;
+				Token* new_token = new Token(temp_token);
+				tokens.push_back(new_token);
+				temp_token.clear();
+			}
+			else {
+				Token* new_token = new Token(temp_token);
+				tokens.push_back(new_token);
+				temp_token.clear();
+				it--;
+			}
+
+			}
 			else if (symbol == '<') {
 				it++;
 				char next_sym = *it;
@@ -249,7 +325,10 @@ bool Lexer::is_split_symbol(char symbol)
 		symbol == '\"' || symbol == ',' ||
 		symbol == ' ' || symbol == '=' ||
 		symbol == '>' || symbol == '<' ||
-		symbol == ';' ||
+		symbol == ';' || symbol == ',' ||
+		symbol == '!' || symbol == '%' ||
+		symbol == '^' || symbol == ':' ||
+    symbol == '\'' ||
 		symbol == '\t' || // tab
 		symbol == '\n';   // 换行
 }
