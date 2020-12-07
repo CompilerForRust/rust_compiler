@@ -273,6 +273,9 @@ token_type Token::get_type()
 	else if (lexeme == "&&") {
 	return token_type::LOGICAND;
 	}
+	else if (lexeme == "->") {
+	return token_type::LOGICAND;
+	}
 	else if (lexeme == "println!") {
 		return token_type::PRINTLN;
 	}

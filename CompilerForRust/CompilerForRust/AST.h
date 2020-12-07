@@ -1,5 +1,6 @@
 #pragma once
 #include "Node.h"
+#include "Log.h"
 
 class AST
 {

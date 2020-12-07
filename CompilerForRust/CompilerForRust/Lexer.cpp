@@ -12,7 +12,8 @@ Lexer::Lexer(const string file)
 			code += ch;
 		}
 		//对读到的内容进行修正
-		code[code.size() - 1] = EOF;
+		//code[code.size() - 1] = EOF;
+		code[code.size() - 1] = ' ';
 		cout << "Code have been written to string" << endl;
 	}
 
@@ -92,6 +93,12 @@ void Lexer::split()
 
 				temp_token = symbol;
 				if (next_sym == '=') {
+					temp_token += next_sym;
+					Token* new_token = new Token(temp_token);
+					tokens.push_back(new_token);
+					temp_token.clear();
+				}
+				else if (next_sym == '>') {
 					temp_token += next_sym;
 					Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
@@ -255,7 +262,7 @@ void Lexer::print() // 写入文件
 	for (const auto token : tokens) {
 		cout_log(token->get_lexeme());
 		cout_log(" WITH TYPE ");
-		cout_log(token->get_type());
+		cout_log(tokenTypeList[(int)token->get_type()]);
 		endl_log();
 	}
 	endl_log();

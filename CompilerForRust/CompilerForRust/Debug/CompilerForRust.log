@@ -1,0 +1,3 @@
+﻿  AST.cpp
+C:\Users\ghost\Desktop\新建文件夹\rust_compiler\CompilerForRust\CompilerForRust\AST.cpp(16,20): warning C4018: “<”: 有符号/无符号不匹配
+  CompilerForRust.vcxproj -> C:\Users\ghost\Desktop\新建文件夹\rust_compiler\CompilerForRust\Debug\CompilerForRust.exe

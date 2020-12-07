@@ -1,1 +1,5 @@
-2.6
+fn f1 ();
+fn f2 (){
+  let a;
+}
+fn main ();
