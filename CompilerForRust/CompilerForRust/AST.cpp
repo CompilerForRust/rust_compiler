@@ -15,7 +15,7 @@ void AST::printRecursive(unique_ptr<Node> &current_node, size_t level)
 
 	for (int i = 0; i < level; ++i)
 	{
-		cout_log("\t");
+		cout_log("  ");
 	}
 
 	cout_log("+-");

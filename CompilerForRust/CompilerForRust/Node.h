@@ -7,7 +7,6 @@ static const char* nodeTypeList[] = {
     "Program",                        //根节点
 
     "FunctionDefinitions",            //多个函数定义
-    "Main",
 
     "FunctionDefinition",             //单个函数
 

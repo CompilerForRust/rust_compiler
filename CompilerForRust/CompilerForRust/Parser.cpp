@@ -57,7 +57,7 @@ unique_ptr<Node> Parser::Program(){
 }
 
 unique_ptr<Node> Parser::FunctionDefinitions() {
-	if (tryEat(token_type::FN))
+	/*if (tryEat(token_type::FN))
 	{
 		auto functionDefinitionChild = FunctionDefinition();
 		auto functionDefinitionsChild = FunctionDefinitions();
@@ -67,7 +67,14 @@ unique_ptr<Node> Parser::FunctionDefinitions() {
 		return functionDefinitionsNode;
 	}
 	else
-		return nullptr;
+		return nullptr;*/
+	
+	unique_ptr<Node> functionDefinitionsNode(new Node("", node_type::FunctionDefinitions));
+	while (tryEat(token_type::FN)) {
+		auto functionDefinitionChild = FunctionDefinition();
+		functionDefinitionsNode->addChildNode(move(functionDefinitionChild));
+	}
+	return functionDefinitionsNode;
 }
 
 unique_ptr<Node> Parser::FunctionDefinition()
@@ -98,37 +105,63 @@ unique_ptr<Node> Parser::FunctionDefinition()
 	}
 }
 
-unique_ptr<Node> Parser::Statements(){ 
+unique_ptr<Node> Parser::Statements() {
 	unique_ptr<Node> statementsNode(new Node("", node_type::Statements));
-	if (tryEat(token_type::LET) || tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
+	//if (tryEat(token_type::LET) || tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
+	//	tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::TRUE) || tryEat(token_type::FALSE) ||
+	//	tryEat(token_type::LBRACE) || tryEat(token_type::NOT) || tryEat(token_type::IDENTIFIER) ||
+	//	tryEat(token_type::LPAR) ||   tryEat(token_type::CONTINUE) || tryEat(token_type::BREAK) ||
+	//	 tryEat(token_type::RETURN) || tryEat(token_type::TYPE))
+	//{
+	//	auto statementChlid = Statement();
+	//	eat(token_type::SEMICOLON);
+	//	auto statementsChild = Statements();
+	//	statementsNode->addChildNode(move(statementChlid));
+	//	statementsNode->addChildNode(move(statementsChild));
+	//	return statementsNode;
+	//}	
+	//else if (tryEat(token_type::WHILE) || tryEat(token_type::FOR) || tryEat(token_type::LOOP)) {
+	//	auto cycleExpressionChild = CycleExpression();
+	//	statementsNode->addChildNode(move(cycleExpressionChild));
+	//	auto statementsChild = Statements();
+	//	statementsNode->addChildNode(move(statementsChild));
+	//	return statementsNode;
+	//}
+	//else if (tryEat(token_type::IF)) {
+	//	auto ifExpressionChild = IfExpression();
+	//	statementsNode->addChildNode(move(ifExpressionChild));
+	//	auto statementsChild = Statements();
+	//	statementsNode->addChildNode(move(statementsChild));
+	//	return statementsNode;
+	//}
+	//else
+	//	return nullptr; 
+	while (tryEat(token_type::LET) || tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
 		tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::TRUE) || tryEat(token_type::FALSE) ||
 		tryEat(token_type::LBRACE) || tryEat(token_type::NOT) || tryEat(token_type::IDENTIFIER) ||
-		tryEat(token_type::LPAR) ||   tryEat(token_type::CONTINUE) || tryEat(token_type::BREAK) ||
-		 tryEat(token_type::RETURN) || tryEat(token_type::TYPE))
-	{
-		auto statementChlid = Statement();
-		eat(token_type::SEMICOLON);
-		auto statementsChild = Statements();
-		statementsNode->addChildNode(move(statementChlid));
-		statementsNode->addChildNode(move(statementsChild));
-		return statementsNode;
-	}	
-	else if (tryEat(token_type::WHILE) || tryEat(token_type::FOR) || tryEat(token_type::LOOP)) {
-		auto cycleExpressionChild = CycleExpression();
-		statementsNode->addChildNode(move(cycleExpressionChild));
-		auto statementsChild = Statements();
-		statementsNode->addChildNode(move(statementsChild));
-		return statementsNode;
+		tryEat(token_type::LPAR) || tryEat(token_type::CONTINUE) || tryEat(token_type::BREAK) ||
+		tryEat(token_type::RETURN) || tryEat(token_type::TYPE) || tryEat(token_type::WHILE) ||
+		tryEat(token_type::FOR) || tryEat(token_type::LOOP) || tryEat(token_type::IF)) {
+		if (tryEat(token_type::LET) || tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
+			tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::TRUE) || tryEat(token_type::FALSE) ||
+			tryEat(token_type::LBRACE) || tryEat(token_type::NOT) || tryEat(token_type::IDENTIFIER) ||
+			tryEat(token_type::LPAR) || tryEat(token_type::CONTINUE) || tryEat(token_type::BREAK) ||
+			tryEat(token_type::RETURN) || tryEat(token_type::TYPE))
+		{
+			auto statementChlid = Statement();
+			eat(token_type::SEMICOLON);
+			statementsNode->addChildNode(move(statementChlid));
+		}
+		else if (tryEat(token_type::WHILE) || tryEat(token_type::FOR) || tryEat(token_type::LOOP)) {
+			auto cycleExpressionChild = CycleExpression();
+			statementsNode->addChildNode(move(cycleExpressionChild));
+		}
+		else if (tryEat(token_type::IF)) {
+			auto ifExpressionChild = IfExpression();
+			statementsNode->addChildNode(move(ifExpressionChild));
+		}
 	}
-	else if (tryEat(token_type::IF)) {
-		auto ifExpressionChild = IfExpression();
-		statementsNode->addChildNode(move(ifExpressionChild));
-		auto statementsChild = Statements();
-		statementsNode->addChildNode(move(statementsChild));
-		return statementsNode;
-	}
-	else
-		return nullptr; 
+	return statementsNode;
 }
 unique_ptr<Node> Parser::Statement(){
 	if (tryEat(token_type::LET)) {
