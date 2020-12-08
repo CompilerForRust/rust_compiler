@@ -15,6 +15,7 @@ static const char* nodeTypeList[] = {
     "Statement",                      //语句
 
     "DeclarationStatement",           //声明语句
+    "DeclarationRightStatement",    //声明语句右值
     "ExpressionStatement",
     "AssignmentExpression",
     "TypeExpression",
@@ -63,6 +64,8 @@ static const char* nodeTypeList[] = {
     "MultiplicativeExpression",       // * | / | %
     "NotExpression",                  // !
     "PrimaryExpression",              // (?)?
+     "ConditionStatement",       //条件语句
+
 
     "PRINTLN", // println!("{}", id);
 
@@ -90,6 +93,7 @@ enum class node_type
     Statement,                      //语句
 
     DeclarationStatement,           //声明语句
+    DeclarationRightStatement,    //声明语句右值
     ExpressionStatement,
     AssignmentExpression,
     TypeExpression,
@@ -138,6 +142,7 @@ enum class node_type
     MultiplicativeExpression,       // * | / | %
     NotExpression,                  // !
     PrimaryExpression,              // (?)?
+    ConditionStatement,       //条件语句
 
     PRINTLN, // println!("{}", id);
 

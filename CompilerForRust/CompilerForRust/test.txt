@@ -1,3 +1,15 @@
-fn main(){
-if var2 < var1*2 
+fn main()
+{
+	let mut var1=2;
+	let mut var2=10;
+
+	if var2 < var1*2 {
+		let a;
+	}
+	else {
+		let mut temp=var2;
+		var2 = var1;
+		var1 = temp;
+	}
+
 }

@@ -26,7 +26,8 @@ public:
     unique_ptr<Node>FunctionDefinition();
     unique_ptr<Node>Statements();                 
     unique_ptr<Node>Statement();                  
-    unique_ptr<Node>DeclarationStatement();       
+    unique_ptr<Node>DeclarationStatement();
+    unique_ptr<Node>DeclarationRightStatement();    //声明语句右值
     unique_ptr<Node>ExpressionStatement();
     unique_ptr<Node>AssignmentExpression();
     unique_ptr<Node>TypeExpression();
@@ -65,7 +66,8 @@ public:
     unique_ptr<Node>AdditiveExpression();          
     unique_ptr<Node>MultiplicativeExpression();    
     unique_ptr<Node>NotExpression();               
-    unique_ptr<Node>PrimaryExpression();           
+    unique_ptr<Node>PrimaryExpression();
+    unique_ptr<Node>ConditionStatement();       //条件语句
     unique_ptr<Node>PRINTLN();
 
     unique_ptr<Node>LogicalOrExpressionE();            //消除左递归
