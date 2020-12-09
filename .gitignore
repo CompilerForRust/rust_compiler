@@ -1,1 +1,13 @@
 /CompilerForRust/CompilerForRust/Debug
+CompilerForRust/.vs/CompilerForRust/v16/.suo
+*.db
+*.db-wal
+*.opendb
+*.ipch
+*.tlog
+*.obj
+*.pdb
+*.ilk
+*.db-shm
+*.idb
+*.exe
