@@ -11,3 +11,4 @@ CompilerForRust/.vs/CompilerForRust/v16/.suo
 *.db-shm
 *.idb
 *.exe
+*.txt
