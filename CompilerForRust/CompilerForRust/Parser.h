@@ -69,6 +69,7 @@ public:
     unique_ptr<Node>PrimaryExpression();
     unique_ptr<Node>ConditionStatement();       //Ìõ¼þÓï¾ä
     unique_ptr<Node>PRINTLN();
+    unique_ptr<Node>COMMENT();                  //×¢ÊÍ
 
     unique_ptr<Node>LogicalOrExpressionE();            //Ïû³ý×óµÝ¹é
     unique_ptr<Node>LogicalAndExpressionE();

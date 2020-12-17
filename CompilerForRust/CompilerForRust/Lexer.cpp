@@ -37,7 +37,9 @@ void Lexer::split()
 				if (temp_token == "println" && next_sym == '!')
 				{
 					temp_token += next_sym;
+					
 					it++;
+					symbol = *it;
 				}
 				Token* new_token = new Token(temp_token);
 				tokens.push_back(new_token);
@@ -73,7 +75,7 @@ void Lexer::split()
 				}
 
 			}
-      else if (symbol == '\'') {
+			else if (symbol == '\'') {
 				temp_token = symbol;
 				char next_sym = *(it + 1);
 				char next_two_sym = *(it + 2);
@@ -204,7 +206,7 @@ void Lexer::split()
 					Token* new_token = new Token(temp_token);
 					it++;
 					while (*it != '\n') {
-						new_token->add_lexeme(to_string(*it));
+						it++;
 					}
 					tokens.push_back(new_token);
 					temp_token.clear();
