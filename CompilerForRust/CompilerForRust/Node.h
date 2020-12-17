@@ -143,6 +143,8 @@ enum class node_type
     PrimaryExpression,              // (?)?
     ConditionStatement,       //Ìõ¼þÓï¾ä
 
+    COMMENT, //×¢ÊÍ
+
     PRINTLN, // println!("{}", id);
 
     LogicalOrExpressionE,            //Ïû³ý×óµÝ¹é

@@ -35,6 +35,7 @@ string Parser::eat(token_type type)
 		error(temp + " expected!");
 	}
 
+	  
 	string value = lex->current_token_value();
 	lex->next_token();
 	return value;
@@ -141,16 +142,21 @@ unique_ptr<Node> Parser::Statements() {
 		tryEat(token_type::LBRACE) || tryEat(token_type::NOT) || tryEat(token_type::IDENTIFIER) ||
 		tryEat(token_type::LPAR) || tryEat(token_type::CONTINUE) || tryEat(token_type::BREAK) ||
 		tryEat(token_type::RETURN) || tryEat(token_type::TYPE) || tryEat(token_type::WHILE) ||
-		tryEat(token_type::FOR) || tryEat(token_type::LOOP) || tryEat(token_type::IF)) {
+		tryEat(token_type::FOR) || tryEat(token_type::LOOP) || tryEat(token_type::IF)||tryEat(token_type::PRINTLN)||tryEat(token_type::COMMENT)) {
 		if (tryEat(token_type::LET) || tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
 			tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::TRUE) || tryEat(token_type::FALSE) ||
 			tryEat(token_type::LBRACE) || tryEat(token_type::NOT) || tryEat(token_type::IDENTIFIER) ||
 			tryEat(token_type::LPAR) || tryEat(token_type::CONTINUE) || tryEat(token_type::BREAK) ||
-			tryEat(token_type::RETURN) || tryEat(token_type::TYPE))
+			tryEat(token_type::RETURN) || tryEat(token_type::TYPE) || tryEat(token_type::PRINTLN))
 		{
 			auto statementChlid = Statement();
 			eat(token_type::SEMICOLON);
 			statementsNode->addChildNode(move(statementChlid));
+		}
+		else if (tryEat(token_type::COMMENT)) {
+			auto commentChild = COMMENT();
+			unique_ptr<Node> statementNode(new Node("", node_type::Statement));
+			statementNode->addChildNode(move(commentChild));
 		}
 		else if (tryEat(token_type::WHILE) || tryEat(token_type::FOR) || tryEat(token_type::LOOP)) {
 			auto cycleExpressionChild = CycleExpression();
@@ -177,6 +183,12 @@ unique_ptr<Node> Parser::Statement(){
 		auto expressionStatementChild = ExpressionStatement();
 		unique_ptr<Node> statementNode(new Node("", node_type::Statement));
 		statementNode->addChildNode(move(expressionStatementChild));
+		return statementNode;
+	}
+	else if (tryEat(token_type::COMMENT)) {
+		auto commentChild = COMMENT();
+		unique_ptr<Node> statementNode(new Node("", node_type::Statement));
+		statementNode->addChildNode(move(commentChild));
 		return statementNode;
 	}
 	else if (tryEat(token_type::PRINTLN)) {
@@ -726,11 +738,17 @@ unique_ptr<Node> Parser::PRINTLN(){
 		lex->next_token();
 	}
 	eat(token_type::QUOTES);
-	eat(token_type::COMMA);
-	auto callParameterListChild = CallParameterList();
-	printlnNode->addChildNode(move(callParameterListChild));
-	eat(token_type::LPAR);
+	//eat(token_type::COMMA);
+	//auto callParameterListChild = CallParameterList();
+	//printlnNode->addChildNode(move(callParameterListChild));
+	eat(token_type::RPAR);
 	return printlnNode;
+}
+//×¢ÊÍÓï¾ä
+unique_ptr<Node>Parser::COMMENT() {
+	unique_ptr<Node>commentNode(new Node("", node_type::COMMENT));
+	eat(token_type::COMMENT);
+	return commentNode;
 }
 
 //Ïû³ý×óµÝ¹é
@@ -926,5 +944,6 @@ void Parser::error(const string message)
 	cout << "PARSE ERROR!" << message << " ";
 	cout << "Current token: " << lex->current_token()->get_lexeme() << endl;
 
+	throw logic_error(message);
 	throw logic_error(message);
 }

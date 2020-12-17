@@ -12,3 +12,8 @@ CompilerForRust/.vs/CompilerForRust/v16/.suo
 *.idb
 *.exe
 *.txt
+CompilerForRust/CompilerForRust/test.txt
+CompilerForRust/CompilerForRust/log.txt
+CompilerForRust/CompilerForRust/log.txt
+CompilerForRust/CompilerForRust/log.txt
+*.txt
