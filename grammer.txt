@@ -11,7 +11,7 @@ Basic
 
 <FunctionDefinitions> -> <FunctionDefinition> <FunctionDefinitions>
                         | e
-<Statements> -> <Statement>;<Statements> | <IfExpression><Statements> | <CycleExpression><Statements>
+<Statements> -> <Statement>;<Statements> | <IfExpression><Statements> | <CycleExpression><Statements> | <COMMENT><Statements>
               | e
 <Statement> ->  <DeclarationStatement>
               | <ExpressionStatement>
