@@ -80,28 +80,37 @@ unique_ptr<Node> Parser::FunctionDefinitions() {
 
 unique_ptr<Node> Parser::FunctionDefinition()
 { 
-	eat(token_type::FN);
+	unique_ptr<Node> functionDefinitionNode(new Node("", node_type::FunctionIdentifier));
+
+	unique_ptr<Node> tokenNodeFN(new Node(eat(token_type::FN), node_type::Token));
+	functionDefinitionNode->addChildNode(move(tokenNodeFN));
+
 	auto functionIdentifierChild = FunctionIdentifier();
-	eat(token_type::LPAR);
+	functionDefinitionNode->addChildNode(move(functionIdentifierChild));
+
+	unique_ptr<Node> tokenNodeLPAR(new Node(eat(token_type::LPAR), node_type::Token));
+	functionDefinitionNode->addChildNode(move(tokenNodeLPAR));
+
 	auto parameterListChild = ParameterList();
+	functionDefinitionNode->addChildNode(move(parameterListChild));
+
 	eat(token_type::RPAR);
 	if (tryEat(token_type::RETURNTYPE)) {
-		eat(token_type::RETURNTYPE);
+		unique_ptr<Node> tokenNodeRETURNTYPE(new Node(eat(token_type::RETURNTYPE), node_type::Token));
+		functionDefinitionNode->addChildNode(move(tokenNodeRETURNTYPE));
+
 		auto dataTypeChild = DataType();
-		auto blockExpressionChlid = BlockExpression();
-		unique_ptr<Node> functionDefinitionNode(new Node("", node_type::FunctionIdentifier));
-		functionDefinitionNode->addChildNode(move(functionIdentifierChild));
-		functionDefinitionNode->addChildNode(move(parameterListChild));
 		functionDefinitionNode->addChildNode(move(dataTypeChild));
+
+		auto blockExpressionChlid = BlockExpression();
 		functionDefinitionNode->addChildNode(move(blockExpressionChlid));
+
 		return functionDefinitionNode;
 	}
 	else {
 		auto blockExpressionChild = BlockExpression();
-		unique_ptr<Node> functionDefinitionNode(new Node("", node_type::FunctionIdentifier));
-		functionDefinitionNode->addChildNode(move(functionIdentifierChild));
-		functionDefinitionNode->addChildNode(move(parameterListChild));
 		functionDefinitionNode->addChildNode(move(blockExpressionChild));
+
 		return functionDefinitionNode;
 	}
 }
@@ -150,8 +159,11 @@ unique_ptr<Node> Parser::Statements() {
 			tryEat(token_type::RETURN) || tryEat(token_type::TYPE) || tryEat(token_type::PRINTLN))
 		{
 			auto statementChlid = Statement();
-			eat(token_type::SEMICOLON);
 			statementsNode->addChildNode(move(statementChlid));
+
+			unique_ptr<Node> tokenNodeSEMICOLON(new Node(eat(token_type::SEMICOLON), node_type::Token));
+			statementsNode->addChildNode(move(tokenNodeSEMICOLON));
+
 		}
 		else if (tryEat(token_type::COMMENT)) {
 			auto commentChild = COMMENT();
@@ -223,22 +235,32 @@ unique_ptr<Node> Parser::Statement(){
 	}
 }
 unique_ptr<Node> Parser::DeclarationStatement(){
-	eat(token_type::LET);
 	unique_ptr<Node>declarationStatementNode(new Node("", node_type::DeclarationStatement));
+
+	unique_ptr<Node>tokenNodeCOLON(new Node(eat(token_type::LET), node_type::Token));
+	declarationStatementNode->addChildNode(move(tokenNodeCOLON));
+
 	auto variableDefinitionChild = VariableDefinition();
 	declarationStatementNode->addChildNode(move(variableDefinitionChild));
+
 	if (tryEat(token_type::COLON)) {
-		eat(token_type::COLON);
+		unique_ptr<Node>tokenNodeCOLON(new Node(eat(token_type::COLON), node_type::Token));
+		declarationStatementNode->addChildNode(move(tokenNodeCOLON));
+
 		auto dataTypeChild = DataType();
 		declarationStatementNode->addChildNode(move(dataTypeChild));
 		if (tryEat(token_type::SET)) {
-			eat(token_type::SET);
+			unique_ptr<Node>tokenNodeSET(new Node(eat(token_type::SET), node_type::Token));
+			declarationStatementNode->addChildNode(move(tokenNodeSET));
+
 			auto declarationRightStatementChild = DeclarationRightStatement();
 			declarationStatementNode->addChildNode(move(declarationRightStatementChild));
 		}
 	}
 	else if (tryEat(token_type::SET)) {
-		eat(token_type::SET);
+		unique_ptr<Node>tokenNodeSET(new Node(eat(token_type::SET), node_type::Token));
+		declarationStatementNode->addChildNode(move(tokenNodeSET));
+
 		auto declarationRightStatementChild = DeclarationRightStatement();
 		declarationStatementNode->addChildNode(move(declarationRightStatementChild));
 	}
@@ -304,19 +326,29 @@ unique_ptr<Node> Parser::AssignmentExpression(){
 		return assignmentExpressionNode;
 }
 unique_ptr<Node> Parser::TypeExpression(){ 
-	eat(token_type::TYPE);
-	auto identifierChild1 = Identifier();
-	eat(token_type::SET);
-	auto identifierChild2 = Identifier();
 	unique_ptr<Node> typeExpressionNode(new Node("", node_type::TypeExpression));
+
+	unique_ptr<Node> tokenNodeTYPE(new Node(eat(token_type::TYPE), node_type::Token));
+	typeExpressionNode->addChildNode(move(tokenNodeTYPE));
+
+	auto identifierChild1 = Identifier();
 	typeExpressionNode->addChildNode(move(identifierChild1));
+
+
+	unique_ptr<Node> tokenNodeSET(new Node(eat(token_type::SET), node_type::Token));
+	typeExpressionNode->addChildNode(move(tokenNodeSET));
+
+	auto identifierChild2 = Identifier();
 	typeExpressionNode->addChildNode(move(identifierChild2));
+
 	return typeExpressionNode;
 }
 unique_ptr<Node> Parser::VariableDefinition(){
 	unique_ptr<Node>variableDefinitionNode(new Node("", node_type::VariableDefinition));
 	if (tryEat(token_type::MUT)) {
-		eat(token_type::MUT);
+		unique_ptr<Node>tokenNodeMUT(new Node(eat(token_type::MUT), node_type::Token));
+		variableDefinitionNode->addChildNode(move(tokenNodeMUT));
+
 		auto variableChild = Variable();
 		variableDefinitionNode->addChildNode(move(variableChild));
 
@@ -371,10 +403,15 @@ unique_ptr<Node> Parser::Variable(){
 unique_ptr<Node> Parser::BlockExpression(){
 	unique_ptr<Node> blockExpressionNode(new Node("", node_type::BlockExpression));
 	unique_ptr<Node>child;
-    eat(token_type::LBRACE);
+	unique_ptr<Node> tokenNode(new Node(eat(token_type::LBRACE), node_type::Token));
+	blockExpressionNode->addChildNode(move(tokenNode));
+
 	child = Statements();
-	eat(token_type::RBRACE);
 	blockExpressionNode->addChildNode(move(child));
+
+	unique_ptr<Node> tokenNode1(new Node(eat(token_type::RBRACE), node_type::Token));
+	blockExpressionNode->addChildNode(move(tokenNode1));
+	
 	return blockExpressionNode;
 }
 
@@ -387,21 +424,34 @@ unique_ptr<Node> Parser::LogicalOrExpression(){
 	return logicalOrExpressionNode;
 }
 unique_ptr<Node> Parser::GroupedExpression(){
-	eat(token_type::LPAR);
-	auto expressionStatementChild = ExpressionStatement();
-	eat(token_type::RPAR);
 	unique_ptr<Node> groupedExpressionNode(new Node("", node_type::BlockExpression));
+	
+	unique_ptr<Node> tokenNodeLPAR(new Node(eat(token_type::LPAR), node_type::Token));
+	groupedExpressionNode->addChildNode(move(tokenNodeLPAR));
+	
+	auto expressionStatementChild = ExpressionStatement();
 	groupedExpressionNode->addChildNode(move(expressionStatementChild));
+	
+	unique_ptr<Node> tokenNodeRPAR(new Node(eat(token_type::RPAR), node_type::Token));
+	groupedExpressionNode->addChildNode(move(tokenNodeRPAR));
+	
 	return groupedExpressionNode;
 }
 unique_ptr<Node> Parser::FunctionCall() {
-	auto functionIdentifierChild = FunctionIdentifier();
-	eat(token_type::LPAR);
-	auto callParameterListChild = CallParameterList();
-	eat(token_type::RPAR);
 	unique_ptr<Node> functionCallNode(new Node("", node_type::FunctionCall));
+
+	auto functionIdentifierChild = FunctionIdentifier();	
 	functionCallNode->addChildNode(move(functionIdentifierChild));
+
+	unique_ptr<Node> tokenNodeLPAR(new Node(eat(token_type::LPAR), node_type::Token));
+	functionCallNode->addChildNode(move(tokenNodeLPAR));
+
+	auto callParameterListChild = CallParameterList();
 	functionCallNode->addChildNode(move(callParameterListChild));
+
+	unique_ptr<Node> tokenNodeRPAR(new Node(eat(token_type::RPAR), node_type::Token));
+	functionCallNode->addChildNode(move(tokenNodeRPAR));
+	
 	return functionCallNode;
 }
 unique_ptr<Node> Parser::ContinueExpression(){ 
@@ -416,17 +466,26 @@ unique_ptr<Node> Parser::BreakExpression(){
 }
 unique_ptr<Node> Parser::IfExpression(){
 	unique_ptr<Node> ifExpressionNode(new Node("", node_type::IfExpression));
-	eat(token_type::IF);
+
+	unique_ptr<Node> tokenNodeIF(new Node(eat(token_type::IF), node_type::Token));
+	ifExpressionNode->addChildNode(move(tokenNodeIF));
+
 	auto conditionStatementChild = ConditionStatement();
 	ifExpressionNode->addChildNode(move(conditionStatementChild));
+
 	auto blockExpressionChild1 = BlockExpression();
 	ifExpressionNode->addChildNode(move(blockExpressionChild1));
+
 	if (tryEat(token_type::ELSE)) {
-		eat(token_type::ELSE);
+		unique_ptr<Node> tokenNodeELSE(new Node(eat(token_type::ELSE), node_type::Token));
+		ifExpressionNode->addChildNode(move(tokenNodeELSE));
 		if (tryEat(token_type::IF)) {
 			auto ifExpressionChild = IfExpression();
-			ifExpressionNode->addChildNode(move(conditionStatementChild));
-			eat(token_type::ELSE);
+			ifExpressionNode->addChildNode(move(ifExpressionChild));
+
+			unique_ptr<Node> tokenNodeELSE1(new Node(eat(token_type::ELSE), node_type::Token));
+			ifExpressionNode->addChildNode(move(tokenNodeELSE1));
+
 			auto blockExpressionChild2 = BlockExpression();
 			ifExpressionNode->addChildNode(move(blockExpressionChild2));
 		}
@@ -438,10 +497,14 @@ unique_ptr<Node> Parser::IfExpression(){
 	return ifExpressionNode;
 }
 unique_ptr<Node> Parser::ReturnExpression(){ 
-	eat(token_type::RETURN);
-	auto expressionStatementChild = ExpressionStatement();
 	unique_ptr<Node> returnExpressionNode(new Node("", node_type::BlockExpression));
+
+	unique_ptr<Node> tokenNodeRETURN(new Node(eat(token_type::RETURN), node_type::Token));
+	returnExpressionNode->addChildNode(move(tokenNodeRETURN));
+
+	auto expressionStatementChild = ExpressionStatement();
 	returnExpressionNode->addChildNode(move(expressionStatementChild));
+
 	return returnExpressionNode;
 }
 unique_ptr<Node> Parser::Identifier(){ 
@@ -492,34 +555,55 @@ unique_ptr<Node> Parser::CycleExpression(){
 	return cycleExpressionNode;
 }
 unique_ptr<Node> Parser::WhileExpression(){
-	eat(token_type::WHILE);
-	auto expressionStatementChild = ExpressionStatement();
-	auto blockExpressionChild = BlockExpression();
 	unique_ptr<Node> whileExpressionNode(new Node("", node_type::WhileExpression));
+
+	unique_ptr<Node> tokenNodeWHILE(new Node(eat(token_type::WHILE), node_type::Token));
+	whileExpressionNode->addChildNode(move(tokenNodeWHILE));
+
+	auto expressionStatementChild = ExpressionStatement();
 	whileExpressionNode->addChildNode(move(expressionStatementChild));
+
+	auto blockExpressionChild = BlockExpression();
 	whileExpressionNode->addChildNode(move(blockExpressionChild));
+
 	return whileExpressionNode;
 }
 unique_ptr<Node> Parser::ForExpression(){
-	eat(token_type::FOR);
-	auto identifierChild = Identifier();
-	eat(token_type::IN);
-	auto shiftExpressionChild1 = ShiftExpression();
-	eat(token_type::DOUBLE_POINT);
-	auto shiftExpressionChild2 = ShiftExpression();
-	auto blockExpressionChild = BlockExpression();
 	unique_ptr<Node> forExpressionNode(new Node("", node_type::ForExpression));
+	
+	unique_ptr<Node> tokenNodeFOR(new Node(eat(token_type::FOR), node_type::Token));
+	forExpressionNode->addChildNode(move(tokenNodeFOR));
+
+	auto identifierChild = Identifier();
 	forExpressionNode->addChildNode(move(identifierChild));
+
+
+	unique_ptr<Node> tokenNodeIN(new Node(eat(token_type::IN), node_type::Token));
+	forExpressionNode->addChildNode(move(tokenNodeIN));
+
+	auto shiftExpressionChild1 = ShiftExpression();
 	forExpressionNode->addChildNode(move(shiftExpressionChild1));
+
+	unique_ptr<Node> tokenNodeDOUBLE_POINT(new Node(eat(token_type::DOUBLE_POINT), node_type::Token));
+	forExpressionNode->addChildNode(move(tokenNodeDOUBLE_POINT));
+
+	auto shiftExpressionChild2 = ShiftExpression();
 	forExpressionNode->addChildNode(move(shiftExpressionChild2));
+
+	auto blockExpressionChild = BlockExpression();
 	forExpressionNode->addChildNode(move(blockExpressionChild));
+
 	return forExpressionNode;
 }
 unique_ptr<Node> Parser::LoopExpression() {
-	eat(token_type::LOOP);
-	auto blockExpressionChild = BlockExpression();
 	unique_ptr<Node> loopExpressionNode(new Node("", node_type::LoopExpression));
+
+	unique_ptr<Node> tokenNodeLOOP(new Node(eat(token_type::LOOP), node_type::Token));
+	loopExpressionNode->addChildNode(move(tokenNodeLOOP));
+
+	auto blockExpressionChild = BlockExpression();
 	loopExpressionNode->addChildNode(move(blockExpressionChild));
+
 	return loopExpressionNode;
 }
 unique_ptr<Node> Parser::FunctionIdentifier(){
@@ -532,12 +616,19 @@ unique_ptr<Node> Parser::ParameterList(){
 	if (tryEat(token_type::IDENTIFIER)) {
 		auto variableChild = Variable();
 		parameterListNode->addChildNode(move(variableChild));
-		eat(token_type::COLON);
+
+		unique_ptr<Node>tokenNodeCOLON(new Node(eat(token_type::COLON), node_type::ParameterList));
+		parameterListNode->addChildNode(move(tokenNodeCOLON));
+
 		auto dataTypeNode = DataType();
 		parameterListNode->addChildNode(move(dataTypeNode));
-		eat(token_type::COMMA);
+
+		unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::Token));
+		parameterListNode->addChildNode(move(tokenNodeCOMMA));
+
 		auto parameterListChild = ParameterList();
 		parameterListNode->addChildNode(move(parameterListChild));
+
 		return parameterListNode;
 	}
 	return nullptr;
@@ -547,18 +638,26 @@ unique_ptr<Node> Parser::CallParameterList(){
 	if (tryEat(token_type::IDENTIFIER)) {
 		auto variableChild = Variable();
 		callParameterListNode->addChildNode(move(variableChild));
-		eat(token_type::COMMA);
+
+		unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::Token));
+		callParameterListNode->addChildNode(move(tokenNodeCOMMA));
+
 		auto callParameterListChild = CallParameterList();
 		callParameterListNode->addChildNode(move(callParameterListChild));
+
 		return callParameterListNode;
 	}
 	else if (tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
 		tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::BOOL)) {
 		auto literalExpressionChild = LiteralExpression();
 		callParameterListNode->addChildNode(move(literalExpressionChild));
-		eat(token_type::COMMA);
+
+		unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::ParameterList));
+		callParameterListNode->addChildNode(move(tokenNodeCOMMA));
+
 		auto callParameterListChild = CallParameterList();
 		callParameterListNode->addChildNode(move(callParameterListChild));
+
 		return callParameterListNode;
 	}
 	return nullptr;
@@ -664,34 +763,46 @@ unique_ptr<Node> Parser::MultiplicativeExpression(){
 	return multiplicativeExpressionNode;
 }
 unique_ptr<Node> Parser::NotExpression(){
+	unique_ptr<Node>notExpressionENode(new Node("", node_type::NotExpression));
 	unique_ptr<Node> child;
 	if (tryEat(token_type::NOT)) {
-		eat(token_type::NOT);
+		unique_ptr<Node>tokenNodeNOT(new Node(eat(token_type::NOT), node_type::Token));
+		notExpressionENode->addChildNode(move(tokenNodeNOT));
+
 		child = PrimaryExpression();
 	}
 	//else if (tryEat(token_type::IDENTIFIER) || tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
 	//	tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::BOOL) || tryEat(token_type::LPAR))
 	else
 		child = PrimaryExpression();
-	unique_ptr<Node>notExpressionENode(new Node("", node_type::NotExpression));
+
 	notExpressionENode->addChildNode(move(child));
 	return notExpressionENode;
 }
 unique_ptr<Node> Parser::PrimaryExpression(){
+	unique_ptr<Node>primaryExpressionENode(new Node("", node_type::PrimaryExpression));
 	unique_ptr<Node> child;
-	if (tryEat(token_type::IDENTIFIER))
+	if (tryEat(token_type::IDENTIFIER)) {
 		child = Variable();
+		primaryExpressionENode->addChildNode(move(child));
+	}	
 	else if (tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
 		tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::BOOL))
+	{
 		child = LiteralExpression();
+		primaryExpressionENode->addChildNode(move(child));
+	}
 	//else if (tryEat(token_type::LPAR)) {
 	else {
-		eat(token_type::LPAR);
+		unique_ptr<Node>toeknNodeLPAR(new Node(eat(token_type::LPAR), node_type::Token));
+		primaryExpressionENode->addChildNode(move(toeknNodeLPAR));
+
 		child = LogicalOrExpression();
-		eat(token_type::RPAR);
+		primaryExpressionENode->addChildNode(move(child));
+
+		unique_ptr<Node>toeknNodeRPAR(new Node(eat(token_type::RPAR), node_type::Token));
+		primaryExpressionENode->addChildNode(move(toeknNodeRPAR));
 	}
-	unique_ptr<Node>primaryExpressionENode(new Node("", node_type::PrimaryExpression));
-	primaryExpressionENode->addChildNode(move(child));
 	return primaryExpressionENode;
 }
 //Ìõ¼þÓï¾ä
@@ -730,24 +841,41 @@ unique_ptr<Node>Parser::ConditionStatement() {
 }
 unique_ptr<Node> Parser::PRINTLN(){ 
 	unique_ptr<Node>printlnNode(new Node("", node_type::PRINTLN));
-	eat(token_type::PRINTLN);
-	eat(token_type::LPAR);
-	eat(token_type::QUOTES);
+
+	unique_ptr<Node>tokenNodePRINTLN(new Node(eat(token_type::PRINTLN), node_type::Token));
+	printlnNode->addChildNode(move(tokenNodePRINTLN));
+
+	unique_ptr<Node>tokenNodeLPAR(new Node(eat(token_type::LPAR), node_type::Token));
+	printlnNode->addChildNode(move(tokenNodeLPAR));
+
+
+	unique_ptr<Node>tokenNodeQUOTES(new Node(eat(token_type::QUOTES), node_type::Token));
+	printlnNode->addChildNode(move(tokenNodeQUOTES));
+
 	while (!tryEat(token_type::QUOTES))
 	{
 		lex->next_token();
 	}
-	eat(token_type::QUOTES);
+
+	unique_ptr<Node>tokenNodeQUOTES1(new Node(eat(token_type::QUOTES), node_type::Token));
+	printlnNode->addChildNode(move(tokenNodeQUOTES1));
+
 	//eat(token_type::COMMA);
 	//auto callParameterListChild = CallParameterList();
 	//printlnNode->addChildNode(move(callParameterListChild));
-	eat(token_type::RPAR);
+
+	unique_ptr<Node>tokenNodeRPAR(new Node(eat(token_type::RPAR), node_type::Token));
+	printlnNode->addChildNode(move(tokenNodeRPAR));
+
 	return printlnNode;
 }
 //×¢ÊÍÓï¾ä
 unique_ptr<Node>Parser::COMMENT() {
 	unique_ptr<Node>commentNode(new Node("", node_type::COMMENT));
-	eat(token_type::COMMENT);
+
+	unique_ptr<Node>tokenNodeCOMMENT(new Node(eat(token_type::COMMENT), node_type::Token));
+	commentNode->addChildNode(move(tokenNodeCOMMENT));
+
 	return commentNode;
 }
 
@@ -756,7 +884,10 @@ unique_ptr<Node>Parser::LogicalOrExpressionE() {
 	unique_ptr<Node>logicalOrExpressionENode(new Node("", node_type::LogicalOrExpressionE));
 
 	if (tryEat(token_type::LOGICOR)) {
-		eat(token_type::LOGICOR);
+
+		unique_ptr<Node>tokenNodeLOGICOR(new Node(eat(token_type::LOGICOR), node_type::Token));
+		logicalOrExpressionENode->addChildNode(move(tokenNodeLOGICOR));
+
 		auto logicalAndExpressionChild = LogicalAndExpression();
 		auto logicalOrExpressionEChild = LogicalOrExpressionE();
 		logicalOrExpressionENode->addChildNode(move(logicalAndExpressionChild));
@@ -769,7 +900,10 @@ unique_ptr<Node>Parser::LogicalAndExpressionE() {
 	unique_ptr<Node>logicalAndExpressionENode(new Node("", node_type::LogicalAndExpressionE));
 
 	if (tryEat(token_type::LOGICAND)) {
-		eat(token_type::LOGICAND);
+
+		unique_ptr<Node>tokenNodeLOGICAND(new Node(eat(token_type::LOGICAND), node_type::Token));
+		logicalAndExpressionENode->addChildNode(move(tokenNodeLOGICAND));
+
 		auto inclusiveOrExpressionChild = InclusiveOrExpression();
 		auto logicalAndExpressionEChild = LogicalAndExpressionE();
 		logicalAndExpressionENode->addChildNode(move(inclusiveOrExpressionChild));
@@ -781,7 +915,9 @@ unique_ptr<Node>Parser::LogicalAndExpressionE() {
 unique_ptr<Node>Parser::InclusiveOrExpressionE() {
 	unique_ptr<Node>inclusiveOrExpressionENode(new Node("", node_type::InclusiveOrExpressionE));
 	if (tryEat(token_type::OR)) {
-		eat(token_type::OR);
+		unique_ptr<Node>tokenNodeOR(new Node(eat(token_type::OR), node_type::Token));
+		inclusiveOrExpressionENode->addChildNode(move(tokenNodeOR));
+
 		auto exclusiveOrExpressionChild = ExclusiveOrExpression();
 		auto inclusiveOrExpressionEChild = InclusiveOrExpressionE();
 		inclusiveOrExpressionENode->addChildNode(move(exclusiveOrExpressionChild));
@@ -793,7 +929,9 @@ unique_ptr<Node>Parser::InclusiveOrExpressionE() {
 unique_ptr<Node>Parser::ExclusiveOrExpressionE() {
 	unique_ptr<Node>exclusiveOrExpressionENode(new Node("", node_type::ExclusiveOrExpressionE));
 	if (tryEat(token_type::XOR)) {
-		eat(token_type::XOR);
+		unique_ptr<Node>tokenNodeXOR(new Node(eat(token_type::XOR), node_type::Token));
+		exclusiveOrExpressionENode->addChildNode(move(tokenNodeXOR));
+
 		auto andExpressionChild = AndExpression();
 		auto exclusiveOrExpressionEChild = ExclusiveOrExpressionE();
 		exclusiveOrExpressionENode->addChildNode(move(andExpressionChild));
@@ -805,7 +943,10 @@ unique_ptr<Node>Parser::ExclusiveOrExpressionE() {
 unique_ptr<Node>Parser::AndExpressionE() {
 	unique_ptr<Node>andExpressionENode(new Node("", node_type::AndExpressionE));
 	if (tryEat(token_type::AND)) {
-		eat(token_type::AND);
+
+		unique_ptr<Node>tokenNodeAND(new Node(eat(token_type::AND), node_type::Token));
+		andExpressionENode->addChildNode(move(tokenNodeAND));
+
 		auto equalityExpressionChild = EqualityExpression();
 		auto andExpressionEChild = AndExpressionE();
 		andExpressionENode->addChildNode(move(equalityExpressionChild));
@@ -817,7 +958,10 @@ unique_ptr<Node>Parser::AndExpressionE() {
 unique_ptr<Node>Parser::EqualityExpressionE() {
 	unique_ptr<Node>equalityExpressionENode(new Node("", node_type::EqualityExpressionE));
 	if (tryEat(token_type::EQUALITY)) {
-		eat(token_type::EQUALITY);
+
+		unique_ptr<Node>tokenNodeEQUALITY(new Node(eat(token_type::EQUALITY), node_type::Token));
+		equalityExpressionENode->addChildNode(move(tokenNodeEQUALITY));
+
 		auto relationalExpressionChild = RelationalExpression();
 		auto equalityExpressionEChild = EqualityExpressionE();
 		equalityExpressionENode->addChildNode(move(relationalExpressionChild));
@@ -825,7 +969,10 @@ unique_ptr<Node>Parser::EqualityExpressionE() {
 		return equalityExpressionENode;
 	}
 	else if (tryEat(token_type::NOTEQUAL)) {
-		eat(token_type::NOTEQUAL);
+
+		unique_ptr<Node>tokenNodeNOTEQUAL(new Node(eat(token_type::NOTEQUAL), node_type::Token));
+		equalityExpressionENode->addChildNode(move(tokenNodeNOTEQUAL));
+
 		auto relationalExpressionChild = RelationalExpression();
 		auto equalityExpressionEChild = EqualityExpressionE();
 		equalityExpressionENode->addChildNode(move(relationalExpressionChild));
@@ -837,7 +984,10 @@ unique_ptr<Node>Parser::EqualityExpressionE() {
 unique_ptr<Node>Parser::RelationalExpressionE() {
 	unique_ptr<Node>relationalExpressionENode(new Node("", node_type::RelationalExpressionE));
 	if (tryEat(token_type::LESS)) {
-		eat(token_type::LESS);
+
+		unique_ptr<Node>tokenNodeLESS(new Node(eat(token_type::LESS), node_type::Token));
+		relationalExpressionENode->addChildNode(move(tokenNodeLESS));
+
 		auto shiftExpressionChild = ShiftExpression();
 		auto relationalExpressionEChild = RelationalExpressionE();
 		relationalExpressionENode->addChildNode(move(shiftExpressionChild));
@@ -845,7 +995,10 @@ unique_ptr<Node>Parser::RelationalExpressionE() {
 		return relationalExpressionENode;
 	}
 	else if (tryEat(token_type::MORE)) {
-		eat(token_type::MORE);
+
+		unique_ptr<Node>tokenNodeMORE(new Node(eat(token_type::MORE), node_type::Token));
+		relationalExpressionENode->addChildNode(move(tokenNodeMORE));
+
 		auto shiftExpressionChild = ShiftExpression();
 		auto relationalExpressionEChild = RelationalExpressionE();
 		relationalExpressionENode->addChildNode(move(shiftExpressionChild));
@@ -853,7 +1006,10 @@ unique_ptr<Node>Parser::RelationalExpressionE() {
 		return relationalExpressionENode;
 	}
 	else if (tryEat(token_type::LESSEQUAL)) {
-		eat(token_type::LESSEQUAL);
+
+		unique_ptr<Node>tokenNodeLESSEQUAL(new Node(eat(token_type::LESSEQUAL), node_type::Token));
+		relationalExpressionENode->addChildNode(move(tokenNodeLESSEQUAL));
+
 		auto shiftExpressionChild = ShiftExpression();
 		auto relationalExpressionEChild = RelationalExpressionE();
 		relationalExpressionENode->addChildNode(move(shiftExpressionChild));
@@ -861,7 +1017,10 @@ unique_ptr<Node>Parser::RelationalExpressionE() {
 		return relationalExpressionENode;
 	}
 	else if (tryEat(token_type::MOREEQUAL)) {
-		eat(token_type::MOREEQUAL);
+
+		unique_ptr<Node>tokenNodeMOREEQUAL(new Node(eat(token_type::MOREEQUAL), node_type::Token));
+		relationalExpressionENode->addChildNode(move(tokenNodeMOREEQUAL));
+
 		auto shiftExpressionChild = ShiftExpression();
 		auto relationalExpressionEChild = RelationalExpressionE();
 		relationalExpressionENode->addChildNode(move(shiftExpressionChild));
@@ -873,7 +1032,10 @@ unique_ptr<Node>Parser::RelationalExpressionE() {
 unique_ptr<Node>Parser::ShiftExpressionE() {
 	unique_ptr<Node>shiftExpressionENode(new Node("", node_type::ShiftExpressionE));
 	if (tryEat(token_type::LSHIFT)) {
-		eat(token_type::LSHIFT);
+
+		unique_ptr<Node>tokenNodeLSHIFT(new Node(eat(token_type::LSHIFT), node_type::Token));
+		shiftExpressionENode->addChildNode(move(tokenNodeLSHIFT));
+
 		auto additiveExpressionChild = AdditiveExpression();
 		auto shiftExpressionEChild = ShiftExpressionE();
 		shiftExpressionENode->addChildNode(move(additiveExpressionChild));
@@ -882,6 +1044,10 @@ unique_ptr<Node>Parser::ShiftExpressionE() {
 	}
 	else if (tryEat(token_type::RSHIFT)) {
 		eat(token_type::RSHIFT);
+
+		unique_ptr<Node>tokenNodeRSHIFT(new Node(eat(token_type::RSHIFT), node_type::Token));
+		shiftExpressionENode->addChildNode(move(shiftExpressionENode));
+
 		auto additiveExpressionChild = AdditiveExpression();
 		auto shiftExpressionEChild = ShiftExpressionE();
 		shiftExpressionENode->addChildNode(move(additiveExpressionChild));
@@ -893,7 +1059,10 @@ unique_ptr<Node>Parser::ShiftExpressionE() {
 unique_ptr<Node>Parser::AdditiveExpressionE() {
 	unique_ptr<Node>additiveExpressionENode(new Node("", node_type::AdditiveExpressionE));
 	if (tryEat(token_type::PLUS)) {
-		eat(token_type::PLUS);
+
+		unique_ptr<Node>tokenNodePLUS(new Node(eat(token_type::PLUS), node_type::Token));
+		additiveExpressionENode->addChildNode(move(tokenNodePLUS));
+
 		auto multiplicativeExpressionChild = MultiplicativeExpression();
 		auto additiveExpressionEChild = AdditiveExpressionE();
 		additiveExpressionENode->addChildNode(move(multiplicativeExpressionChild));
@@ -901,7 +1070,10 @@ unique_ptr<Node>Parser::AdditiveExpressionE() {
 		return additiveExpressionENode;
 	}
 	else if (tryEat(token_type::MINUS)) {
-		eat(token_type::MINUS);
+
+		unique_ptr<Node>tokenNodeMINUS(new Node(eat(token_type::MINUS), node_type::Token));
+		additiveExpressionENode->addChildNode(move(tokenNodeMINUS));
+
 		auto multiplicativeExpressionChild = MultiplicativeExpression();
 		auto additiveExpressionEChild = AdditiveExpressionE();
 		additiveExpressionENode->addChildNode(move(multiplicativeExpressionChild));
@@ -913,7 +1085,10 @@ unique_ptr<Node>Parser::AdditiveExpressionE() {
 unique_ptr<Node>Parser::MultiplicativeExpressionE() {
 	unique_ptr<Node>multiplicativeExpressionENode(new Node("", node_type::MultiplicativeExpressionE));
 	if (tryEat(token_type::STAR)) {
-		eat(token_type::STAR);
+
+		unique_ptr<Node>tokenNodeSTAR(new Node(eat(token_type::STAR), node_type::Token));
+		multiplicativeExpressionENode->addChildNode(move(tokenNodeSTAR));
+
 		auto notExpressionChild = NotExpression();
 		auto multiplicativeExpressionEChild = MultiplicativeExpressionE();
 		multiplicativeExpressionENode->addChildNode(move(notExpressionChild));
@@ -921,7 +1096,10 @@ unique_ptr<Node>Parser::MultiplicativeExpressionE() {
 		return multiplicativeExpressionENode;
 	}
 	else if (tryEat(token_type::SLASH)) {
-		eat(token_type::SLASH);
+
+		unique_ptr<Node>tokenNodeSLASH(new Node(eat(token_type::SLASH), node_type::Token));
+		multiplicativeExpressionENode->addChildNode(move(tokenNodeSLASH));
+
 		auto notExpressionChild = NotExpression();
 		auto multiplicativeExpressionEChild = MultiplicativeExpressionE();
 		multiplicativeExpressionENode->addChildNode(move(notExpressionChild));
@@ -929,7 +1107,10 @@ unique_ptr<Node>Parser::MultiplicativeExpressionE() {
 		return multiplicativeExpressionENode;
 	}
 	else if (tryEat(token_type::PERCENT)) {
-		eat(token_type::PERCENT);
+
+		unique_ptr<Node>tokenNodePERCENT(new Node(eat(token_type::PERCENT), node_type::Token));
+		multiplicativeExpressionENode->addChildNode(move(tokenNodePERCENT));
+
 		auto notExpressionChild = NotExpression();
 		auto multiplicativeExpressionEChild = MultiplicativeExpressionE();
 		multiplicativeExpressionENode->addChildNode(move(notExpressionChild));
