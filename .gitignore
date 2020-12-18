@@ -17,3 +17,4 @@ CompilerForRust/CompilerForRust/log.txt
 CompilerForRust/CompilerForRust/log.txt
 CompilerForRust/CompilerForRust/log.txt
 *.txt
+/CompilerForRust/.vs

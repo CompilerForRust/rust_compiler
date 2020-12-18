@@ -1,0 +1,4 @@
+#include "llvm/ADT/APFloat.h"
+#如需引入llvm里的头文件，须在 "项目 - 属性 - C/C++ - 常规 - 附加包含目录" 中添加llvm源码所在地址（llvm已配置好）
+#如下列地址：
+D:\equip\my\llvm-project\llvm\include;D:\equip\my\llvm-project\build\include;
