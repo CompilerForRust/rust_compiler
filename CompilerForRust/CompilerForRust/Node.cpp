@@ -7,11 +7,12 @@ Node::Node(const string value, node_type type)
 }
 Node::Node(const string value, node_type type, vector<unique_ptr<Node>> childNodes)
 {
+
 	this->value = value;
 	this->type = type;
 	this->childNodes = move(childNodes);
 }
-Node::Node() { 
+Node::Node() {
 	childNodes.clear();
 
 };

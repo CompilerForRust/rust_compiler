@@ -53,6 +53,16 @@ void AST::printRecursive(unique_ptr<Node> &current_node, size_t level)
 		cout_log(current_node->value);
 		cout_log(")");
 		break;
+	case node_type::OP:
+		cout_log("OP (");
+		cout_log(current_node->value);
+		cout_log(")");
+		break;
+	case node_type::AssignmentOperator:
+		cout_log("AssignmentOperator (");
+		cout_log(current_node->value);
+		cout_log(")");
+		break;
 	default:
 		cout_log(nodeTypeList[(int)current_node->type]);
 		break;
