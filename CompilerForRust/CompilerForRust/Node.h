@@ -1,8 +1,45 @@
 #pragma once
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
 #include <iostream>
 #include <vector>
 
+
 using namespace std;
+using namespace llvm;
+
+static map<string, int>BinopPrecedence;
+static void initMap() {
+    BinopPrecedence["||"] = 0;
+    BinopPrecedence["&&"] = 10;
+    BinopPrecedence["|"] = 20;
+    BinopPrecedence["^"] = 30;
+    BinopPrecedence["&"] = 40;
+    BinopPrecedence["=="] = 50;
+    BinopPrecedence["!="] = 50;
+    BinopPrecedence["<"] = 60;
+    BinopPrecedence["<="] = 60;
+    BinopPrecedence[">"] = 60;
+    BinopPrecedence[">="] = 60;
+    BinopPrecedence["<<"] = 70;
+    BinopPrecedence[">>"] = 70;
+    BinopPrecedence["+"] = 80;
+    BinopPrecedence["-"] = 80;
+    BinopPrecedence["*"] = 90;
+    BinopPrecedence["/"] = 90;
+    BinopPrecedence["%"] = 90;
+    BinopPrecedence["!"] = 100;
+};
+
 static const char* nodeTypeList[] = {
     "Program",                        //根节点
 
@@ -26,7 +63,11 @@ static const char* nodeTypeList[] = {
     "Variable",
 
     "BlockExpression",
-    "LogicalOrExpression",
+    //"LogicalOrExpression",
+    "BinaryExpression", //二元表达式
+    "LHS",
+    "OP",
+    "RHS",
     "GroupedExpression",
     "FunctionCall",
     "ContinueExpression",
@@ -52,33 +93,39 @@ static const char* nodeTypeList[] = {
     "CallParameterList",
 
     "AssignmentOperator",             // [*,/,-,+,<<,>>,%,&,^,|]?=
-    "LogicalAndExpression",           // &&
-    "InclusiveOrExpression",          // |
-    "ExclusiveOrExpression",          // ^
-    "AndExpression",                  // &
-    "EqualityExpression",             // == | !=
-    "RelationalExpression",           // [<,>]=?
-    "ShiftExpression",                // << | >>
-    "AdditiveExpression",             // + | -
-    "MultiplicativeExpression",       // * | / | %
-    "NotExpression",                  // !
+/*  消除左递归弃用
+* 
+*   "LogicalAndExpression",           // &&
+*   "InclusiveOrExpression",          // |
+*   "ExclusiveOrExpression",          // ^
+*   "AndExpression",                  // &
+*   "EqualityExpression",             // == | !=
+*   "RelationalExpression",           // [<,>]=?
+*   "ShiftExpression",                // << | >>
+*   "AdditiveExpression",             // + | -
+*   "MultiplicativeExpression",       // * | / | %
+*   "NotExpression",                  // !
+*/
     "PrimaryExpression",              // (?)?
      "ConditionStatement",       //条件语句
 
      "COMMENT", //注释
 
     "PRINTLN", // println!("{}", id);
-
-   "LogicalOrExpressionE",            //消除左递归
-   "LogicalAndExpressionE",
-   "InclusiveOrExpressionE",
-   "ExclusiveOrExpressionE",
-   "AndExpressionE",
-   "EqualityExpressionE",
-   "RelationalExpressionE",
-   "ShiftExpressionE",
-   "AdditiveExpressionE",
-   "MultiplicativeExpressionE",
+/*  消除左递归弃用
+* 
+*   "LogicalOrExpressionE",            //消除左递归
+*   "LogicalAndExpressionE",
+*   "InclusiveOrExpressionE",
+*   "ExclusiveOrExpressionE",
+*   "AndExpressionE",
+*   "EqualityExpressionE",
+*   "RelationalExpressionE",
+*   "ShiftExpressionE",
+*   "AdditiveExpressionE",
+*   "MultiplicativeExpressionE",
+*
+*/
    "Token",                     //保存token
 };
 
@@ -106,7 +153,11 @@ enum class node_type
     Variable,
 
     BlockExpression,
-    LogicalOrExpression,
+    //LogicalOrExpression,
+    BinaryExpression, //二元表达式
+    LHS,
+    OP,
+    RHS,
     GroupedExpression,
     FunctionCall,
     ContinueExpression,
@@ -132,16 +183,19 @@ enum class node_type
     CallParameterList,
 
     AssignmentOperator,             // [*,/,-,+,<<,>>,%,&,^,|]?=
-    LogicalAndExpression,           // &&
-    InclusiveOrExpression,          // |
-    ExclusiveOrExpression,          // ^
-    AndExpression,                  // &
-    EqualityExpression,             // == | !=
-    RelationalExpression,           // [<,>]=?
-    ShiftExpression,                // << | >>
-    AdditiveExpression,             // + | -
-    MultiplicativeExpression,       // * | / | %
-    NotExpression,                  // !
+/*  消除左递归弃用
+* 
+*    LogicalAndExpression,           // &&
+*    InclusiveOrExpression,          // |
+*    ExclusiveOrExpression,          // ^
+*    AndExpression,                  // &
+*    EqualityExpression,             // == | !=
+*    RelationalExpression,           // [<,>]=?
+*    ShiftExpression,                // << | >>
+*    AdditiveExpression,             // + | -
+*    MultiplicativeExpression,       // * | / | %
+*    NotExpression,                  // !
+*/    
     PrimaryExpression,              // (?)?
     ConditionStatement,       //条件语句
 
@@ -149,16 +203,19 @@ enum class node_type
 
     PRINTLN, // println!("{}", id);
 
-    LogicalOrExpressionE,            //消除左递归
-    LogicalAndExpressionE,
-    InclusiveOrExpressionE,
-    ExclusiveOrExpressionE,
-    AndExpressionE,
-    EqualityExpressionE,
-    RelationalExpressionE,
-    ShiftExpressionE,
-    AdditiveExpressionE,
-    MultiplicativeExpressionE,
+/*   消除左递归弃用
+* 
+*    LogicalOrExpressionE,            //消除左递归
+*    LogicalAndExpressionE,
+*    InclusiveOrExpressionE,
+*    ExclusiveOrExpressionE,
+*    AndExpressionE,
+*    EqualityExpressionE,
+*    RelationalExpressionE,
+*    ShiftExpressionE,
+*    AdditiveExpressionE,
+*    MultiplicativeExpressionE,
+*/
 
     Token,                     //保存token
 
@@ -176,4 +233,5 @@ public:
     Node();
     ~Node();
     void addChildNode(unique_ptr<Node> childNode);
+    Value* codegen();
 };
