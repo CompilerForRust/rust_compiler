@@ -442,6 +442,7 @@ unique_ptr<Node> Parser::ParseBinOpRHS(int ExprPrec,unique_ptr<Node> LHSChild,no
 
 		int NextPrec = GetTokPrecedence(nowToken());
 		if (TokPrec < NextPrec) {
+			RHSChild->type = node_type::LHS;
 			RHSChild = ParseBinOpRHS(TokPrec + 1, std::move(RHSChild),node_type::RHS);
 			if (!RHSChild)
 				return nullptr;
@@ -465,8 +466,10 @@ unique_ptr<Node> Parser::BinaryExpression(){
 		tryEat(token_type::RSHIFT) || tryEat(token_type::PLUS) || tryEat(token_type::MINUS) ||
 		tryEat(token_type::STAR) || tryEat(token_type::SLASH) || tryEat(token_type::MOD) ||
 		tryEat(token_type::NOT)) {
-
-		binaryExpressionNode->addChildNode(move(ParseBinOpRHS(0, move(LHSChild), node_type::LHS)));
+		auto Childs = move(ParseBinOpRHS(0, move(LHSChild), node_type::LHS));
+		for (int child = 0; child != Childs->childNodes.size(); child++) {
+			binaryExpressionNode->addChildNode(move(Childs->childNodes[child]));
+		}
 	}
 	else {
 		binaryExpressionNode->addChildNode(move(LHSChild));
