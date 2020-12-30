@@ -426,7 +426,7 @@ int Parser::GetTokPrecedence(string op) {
 	}
 	else return -1;
 }
-unique_ptr<Node> Parser::ParseBinOpRHS(int ExprPrec,unique_ptr<Node> LHSChild) {
+unique_ptr<Node> Parser::ParseBinOpRHS(int ExprPrec,unique_ptr<Node> LHSChild,node_type NodeType) {
 	while (true) {
 		string value = nowToken();
 		int TokPrec = GetTokPrecedence(nowToken());
@@ -436,18 +436,18 @@ unique_ptr<Node> Parser::ParseBinOpRHS(int ExprPrec,unique_ptr<Node> LHSChild) {
 
 		auto OPChild = OP();
 
-		auto RHSChild = PrimaryExpression();
+		auto RHSChild = RHS();
 		if (!RHSChild)
 			return nullptr;
 
 		int NextPrec = GetTokPrecedence(nowToken());
 		if (TokPrec < NextPrec) {
-			RHSChild = ParseBinOpRHS(TokPrec + 1, std::move(RHSChild));
+			RHSChild = ParseBinOpRHS(TokPrec + 1, std::move(RHSChild),node_type::RHS);
 			if (!RHSChild)
 				return nullptr;
 		}
 
-		unique_ptr<Node>newLHSChild(new Node("", node_type::LHS));
+		unique_ptr<Node>newLHSChild(new Node("", NodeType));
 		newLHSChild->addChildNode(move(LHSChild));
 		newLHSChild->addChildNode(move(OPChild));
 		newLHSChild->addChildNode(move(RHSChild));
@@ -455,6 +455,7 @@ unique_ptr<Node> Parser::ParseBinOpRHS(int ExprPrec,unique_ptr<Node> LHSChild) {
 	}
 }
 unique_ptr<Node> Parser::BinaryExpression(){
+	unique_ptr<Node>binaryExpressionNode(new Node("", node_type::BinaryExpression));
 	auto LHSChild = LHS();
 	if (!LHSChild)return nullptr;
 	if (tryEat(token_type::LOGICOR) || tryEat(token_type::LOGICAND) || tryEat(token_type::OR) ||
@@ -464,16 +465,23 @@ unique_ptr<Node> Parser::BinaryExpression(){
 		tryEat(token_type::RSHIFT) || tryEat(token_type::PLUS) || tryEat(token_type::MINUS) ||
 		tryEat(token_type::STAR) || tryEat(token_type::SLASH) || tryEat(token_type::MOD) ||
 		tryEat(token_type::NOT)) {
-		return ParseBinOpRHS(0, move(LHSChild));
+
+		binaryExpressionNode->addChildNode(move(ParseBinOpRHS(0, move(LHSChild), node_type::LHS)));
 	}
 	else {
-		unique_ptr<Node>binaryExpressionNode(new Node("", node_type::BinaryExpression));
 		binaryExpressionNode->addChildNode(move(LHSChild));
-		return binaryExpressionNode;
+		
 	}
+	return binaryExpressionNode;
 }
 unique_ptr<Node> Parser::LHS() {
 	unique_ptr<Node>LHSNode(new Node("", node_type::LHS));
+	auto PrimaryExpressionChild = PrimaryExpression();
+	LHSNode->addChildNode(move(PrimaryExpressionChild));
+	return LHSNode;
+}
+unique_ptr<Node> Parser::RHS() {
+	unique_ptr<Node>LHSNode(new Node("", node_type::RHS));
 	auto PrimaryExpressionChild = PrimaryExpression();
 	LHSNode->addChildNode(move(PrimaryExpressionChild));
 	return LHSNode;

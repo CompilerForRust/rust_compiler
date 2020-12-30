@@ -33,40 +33,74 @@ a WITH TYPE IDENTIFIER
 } WITH TYPE RBRACE
 } WITH TYPE RBRACE
 
------- TOKENS ------
-fn WITH TYPE FN
-main WITH TYPE IDENTIFIER
-( WITH TYPE LPAR
-) WITH TYPE RPAR
-{ WITH TYPE LBRACE
-let WITH TYPE LET
-a WITH TYPE IDENTIFIER
-= WITH TYPE SET
-1 WITH TYPE NUMBER
-; WITH TYPE SEMICOLON
-println! WITH TYPE PRINTLN
-( WITH TYPE LPAR
-" WITH TYPE QUOTES
-aasd WITH TYPE IDENTIFIER
-" WITH TYPE QUOTES
-) WITH TYPE RPAR
-; WITH TYPE SEMICOLON
-// WITH TYPE COMMENT
-if WITH TYPE IF
-a WITH TYPE IDENTIFIER
-== WITH TYPE EQUALITY
-1 WITH TYPE NUMBER
-{ WITH TYPE LBRACE
-a WITH TYPE IDENTIFIER
-= WITH TYPE SET
-5 WITH TYPE NUMBER
-+ WITH TYPE PLUS
-6 WITH TYPE NUMBER
-* WITH TYPE STAR
-3 WITH TYPE NUMBER
-; WITH TYPE SEMICOLON
-} WITH TYPE RBRACE
-} WITH TYPE RBRACE
+------ AST ------
++-Program
+  +-FunctionDefinitions
+    +-FunctionIdentifier
+      +-TOKEN (fn)
+      +-Identifier (main)
+      +-TOKEN (()
+      +-BlockExpression
+        +-TOKEN ({)
+        +-Statements
+          +-Statement
+            +-DeclarationStatement
+              +-TOKEN (let)
+              +-VariableDefinition
+                +-Variable (a)
+              +-TOKEN (=)
+              +-DeclarationRightStatement
+                +-BinaryExpression
+                  +-LHS
+                    +-PrimaryExpression
+                      +-LiteralExpression
+                        +-INTEGER_LITERAL (1)
+          +-TOKEN (;)
+          +-Statement
+            +-PRINTLN
+              +-TOKEN (println!)
+              +-TOKEN (()
+              +-TOKEN (")
+              +-TOKEN (")
+              +-TOKEN ())
+          +-TOKEN (;)
+          +-IfExpression
+            +-TOKEN (if)
+            +-ConditionStatement
+              +-BinaryExpression
+                +-LHS
+                  +-LHS
+                    +-PrimaryExpression
+                      +-Variable (a)
+                  +-OP (==)
+                  +-PrimaryExpression
+                    +-LiteralExpression
+                      +-INTEGER_LITERAL (1)
+            +-BlockExpression
+              +-TOKEN ({)
+              +-Statements
+                +-Statement
+                  +-AssignmentExpression
+                    +-Variable (a)
+                    +-AssignmentOperator
+                    +-BinaryExpression
+                      +-LHS
+                        +-LHS
+                          +-PrimaryExpression
+                            +-LiteralExpression
+                              +-INTEGER_LITERAL (5)
+                        +-OP (+)
+                        +-RHS
+                          +-PrimaryExpression
+                            +-LiteralExpression
+                              +-INTEGER_LITERAL (6)
+                          +-OP (*)
+                          +-PrimaryExpression
+                            +-LiteralExpression
+                              +-INTEGER_LITERAL (3)
+                +-TOKEN (;)
+              +-TOKEN (})
+        +-TOKEN (})
 
 ------ TOKENS ------
 fn WITH TYPE FN
@@ -103,213 +137,75 @@ a WITH TYPE IDENTIFIER
 } WITH TYPE RBRACE
 } WITH TYPE RBRACE
 
------- TOKENS ------
-fn WITH TYPE FN
-main WITH TYPE IDENTIFIER
-( WITH TYPE LPAR
-) WITH TYPE RPAR
-{ WITH TYPE LBRACE
-let WITH TYPE LET
-a WITH TYPE IDENTIFIER
-= WITH TYPE SET
-1 WITH TYPE NUMBER
-; WITH TYPE SEMICOLON
-println! WITH TYPE PRINTLN
-( WITH TYPE LPAR
-" WITH TYPE QUOTES
-aasd WITH TYPE IDENTIFIER
-" WITH TYPE QUOTES
-) WITH TYPE RPAR
-; WITH TYPE SEMICOLON
-// WITH TYPE COMMENT
-if WITH TYPE IF
-a WITH TYPE IDENTIFIER
-== WITH TYPE EQUALITY
-1 WITH TYPE NUMBER
-{ WITH TYPE LBRACE
-a WITH TYPE IDENTIFIER
-= WITH TYPE SET
-5 WITH TYPE NUMBER
-+ WITH TYPE PLUS
-6 WITH TYPE NUMBER
-* WITH TYPE STAR
-3 WITH TYPE NUMBER
-; WITH TYPE SEMICOLON
-} WITH TYPE RBRACE
-} WITH TYPE RBRACE
-
------- TOKENS ------
-fn WITH TYPE FN
-main WITH TYPE IDENTIFIER
-( WITH TYPE LPAR
-) WITH TYPE RPAR
-{ WITH TYPE LBRACE
-let WITH TYPE LET
-a WITH TYPE IDENTIFIER
-= WITH TYPE SET
-1 WITH TYPE NUMBER
-; WITH TYPE SEMICOLON
-println! WITH TYPE PRINTLN
-( WITH TYPE LPAR
-" WITH TYPE QUOTES
-aasd WITH TYPE IDENTIFIER
-" WITH TYPE QUOTES
-) WITH TYPE RPAR
-; WITH TYPE SEMICOLON
-// WITH TYPE COMMENT
-if WITH TYPE IF
-a WITH TYPE IDENTIFIER
-== WITH TYPE EQUALITY
-1 WITH TYPE NUMBER
-{ WITH TYPE LBRACE
-a WITH TYPE IDENTIFIER
-= WITH TYPE SET
-5 WITH TYPE NUMBER
-+ WITH TYPE PLUS
-6 WITH TYPE NUMBER
-* WITH TYPE STAR
-3 WITH TYPE NUMBER
-; WITH TYPE SEMICOLON
-} WITH TYPE RBRACE
-} WITH TYPE RBRACE
-
------- TOKENS ------
-fn WITH TYPE FN
-main WITH TYPE IDENTIFIER
-( WITH TYPE LPAR
-) WITH TYPE RPAR
-{ WITH TYPE LBRACE
-let WITH TYPE LET
-a WITH TYPE IDENTIFIER
-= WITH TYPE SET
-1 WITH TYPE NUMBER
-; WITH TYPE SEMICOLON
-println! WITH TYPE PRINTLN
-( WITH TYPE LPAR
-" WITH TYPE QUOTES
-aasd WITH TYPE IDENTIFIER
-" WITH TYPE QUOTES
-) WITH TYPE RPAR
-; WITH TYPE SEMICOLON
-// WITH TYPE COMMENT
-if WITH TYPE IF
-a WITH TYPE IDENTIFIER
-== WITH TYPE EQUALITY
-1 WITH TYPE NUMBER
-{ WITH TYPE LBRACE
-a WITH TYPE IDENTIFIER
-= WITH TYPE SET
-5 WITH TYPE NUMBER
-+ WITH TYPE PLUS
-6 WITH TYPE NUMBER
-* WITH TYPE STAR
-3 WITH TYPE NUMBER
-; WITH TYPE SEMICOLON
-} WITH TYPE RBRACE
-} WITH TYPE RBRACE
-
------- TOKENS ------
-fn WITH TYPE FN
-main WITH TYPE IDENTIFIER
-( WITH TYPE LPAR
-) WITH TYPE RPAR
-{ WITH TYPE LBRACE
-let WITH TYPE LET
-a WITH TYPE IDENTIFIER
-= WITH TYPE SET
-1 WITH TYPE NUMBER
-; WITH TYPE SEMICOLON
-println! WITH TYPE PRINTLN
-( WITH TYPE LPAR
-" WITH TYPE QUOTES
-aasd WITH TYPE IDENTIFIER
-" WITH TYPE QUOTES
-) WITH TYPE RPAR
-; WITH TYPE SEMICOLON
-// WITH TYPE COMMENT
-if WITH TYPE IF
-a WITH TYPE IDENTIFIER
-== WITH TYPE EQUALITY
-1 WITH TYPE NUMBER
-{ WITH TYPE LBRACE
-a WITH TYPE IDENTIFIER
-= WITH TYPE SET
-5 WITH TYPE NUMBER
-+ WITH TYPE PLUS
-6 WITH TYPE NUMBER
-* WITH TYPE STAR
-3 WITH TYPE NUMBER
-; WITH TYPE SEMICOLON
-} WITH TYPE RBRACE
-} WITH TYPE RBRACE
-
------- TOKENS ------
-fn WITH TYPE FN
-main WITH TYPE IDENTIFIER
-( WITH TYPE LPAR
-) WITH TYPE RPAR
-{ WITH TYPE LBRACE
-let WITH TYPE LET
-a WITH TYPE IDENTIFIER
-= WITH TYPE SET
-1 WITH TYPE NUMBER
-; WITH TYPE SEMICOLON
-println! WITH TYPE PRINTLN
-( WITH TYPE LPAR
-" WITH TYPE QUOTES
-aasd WITH TYPE IDENTIFIER
-" WITH TYPE QUOTES
-) WITH TYPE RPAR
-; WITH TYPE SEMICOLON
-// WITH TYPE COMMENT
-if WITH TYPE IF
-a WITH TYPE IDENTIFIER
-== WITH TYPE EQUALITY
-1 WITH TYPE NUMBER
-{ WITH TYPE LBRACE
-a WITH TYPE IDENTIFIER
-= WITH TYPE SET
-5 WITH TYPE NUMBER
-+ WITH TYPE PLUS
-6 WITH TYPE NUMBER
-* WITH TYPE STAR
-3 WITH TYPE NUMBER
-; WITH TYPE SEMICOLON
-} WITH TYPE RBRACE
-} WITH TYPE RBRACE
-
------- TOKENS ------
-fn WITH TYPE FN
-main WITH TYPE IDENTIFIER
-( WITH TYPE LPAR
-) WITH TYPE RPAR
-{ WITH TYPE LBRACE
-let WITH TYPE LET
-a WITH TYPE IDENTIFIER
-= WITH TYPE SET
-1 WITH TYPE NUMBER
-; WITH TYPE SEMICOLON
-println! WITH TYPE PRINTLN
-( WITH TYPE LPAR
-" WITH TYPE QUOTES
-aasd WITH TYPE IDENTIFIER
-" WITH TYPE QUOTES
-) WITH TYPE RPAR
-; WITH TYPE SEMICOLON
-// WITH TYPE COMMENT
-if WITH TYPE IF
-a WITH TYPE IDENTIFIER
-== WITH TYPE EQUALITY
-1 WITH TYPE NUMBER
-{ WITH TYPE LBRACE
-a WITH TYPE IDENTIFIER
-= WITH TYPE SET
-5 WITH TYPE NUMBER
-+ WITH TYPE PLUS
-6 WITH TYPE NUMBER
-* WITH TYPE STAR
-3 WITH TYPE NUMBER
-; WITH TYPE SEMICOLON
-} WITH TYPE RBRACE
-} WITH TYPE RBRACE
+------ AST ------
++-Program
+  +-FunctionDefinitions
+    +-FunctionIdentifier
+      +-TOKEN (fn)
+      +-Identifier (main)
+      +-TOKEN (()
+      +-BlockExpression
+        +-TOKEN ({)
+        +-Statements
+          +-Statement
+            +-DeclarationStatement
+              +-TOKEN (let)
+              +-VariableDefinition
+                +-Variable (a)
+              +-TOKEN (=)
+              +-DeclarationRightStatement
+                +-BinaryExpression
+                  +-LHS
+                    +-PrimaryExpression
+                      +-LiteralExpression
+                        +-INTEGER_LITERAL (1)
+          +-TOKEN (;)
+          +-Statement
+            +-PRINTLN
+              +-TOKEN (println!)
+              +-TOKEN (()
+              +-TOKEN (")
+              +-TOKEN (")
+              +-TOKEN ())
+          +-TOKEN (;)
+          +-IfExpression
+            +-TOKEN (if)
+            +-ConditionStatement
+              +-BinaryExpression
+                +-LHS
+                  +-LHS
+                    +-PrimaryExpression
+                      +-Variable (a)
+                  +-OP (==)
+                  +-RHS
+                    +-PrimaryExpression
+                      +-LiteralExpression
+                        +-INTEGER_LITERAL (1)
+            +-BlockExpression
+              +-TOKEN ({)
+              +-Statements
+                +-Statement
+                  +-AssignmentExpression
+                    +-Variable (a)
+                    +-AssignmentOperator
+                    +-BinaryExpression
+                      +-LHS
+                        +-LHS
+                          +-PrimaryExpression
+                            +-LiteralExpression
+                              +-INTEGER_LITERAL (5)
+                        +-OP (+)
+                        +-RHS
+                          +-RHS
+                            +-PrimaryExpression
+                              +-LiteralExpression
+                                +-INTEGER_LITERAL (6)
+                          +-OP (*)
+                          +-RHS
+                            +-PrimaryExpression
+                              +-LiteralExpression
+                                +-INTEGER_LITERAL (3)
+                +-TOKEN (;)
+              +-TOKEN (})
+        +-TOKEN (})
 

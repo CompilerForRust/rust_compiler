@@ -17,8 +17,8 @@
 using namespace std;
 using namespace llvm;
 
-static map<string, int>BinopPrecedence;
-static void initMap() {
+static map<string, int> initMap() {
+    map<string, int>BinopPrecedence;
     BinopPrecedence["||"] = 0;
     BinopPrecedence["&&"] = 10;
     BinopPrecedence["|"] = 20;
@@ -38,7 +38,9 @@ static void initMap() {
     BinopPrecedence["/"] = 90;
     BinopPrecedence["%"] = 90;
     BinopPrecedence["!"] = 100;
+    return BinopPrecedence;
 };
+static map<string, int>BinopPrecedence=initMap();
 
 static const char* nodeTypeList[] = {
     "Program",                        //¸ù½Úµã

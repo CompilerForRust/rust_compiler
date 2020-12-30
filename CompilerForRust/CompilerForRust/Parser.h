@@ -38,9 +38,10 @@ public:
     unique_ptr<Node>Variable();
     unique_ptr<Node>BlockExpression();
     //unique_ptr<Node>LogicalOrExpression();
-    unique_ptr<Node>ParseBinOpRHS(int ExprPrec, unique_ptr<Node> LHS);
+    unique_ptr<Node>ParseBinOpRHS(int ExprPrec, unique_ptr<Node> LHS,node_type NodeType);
     unique_ptr<Node>BinaryExpression();
     unique_ptr<Node>LHS();
+    unique_ptr<Node>RHS();
     unique_ptr<Node>OP();
 
     unique_ptr<Node>GroupedExpression();
