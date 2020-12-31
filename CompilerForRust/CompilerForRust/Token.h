@@ -238,8 +238,11 @@ class Token
 public:
 	string lexeme;
 	token_type type;
+	unsigned int col;
+	unsigned int line;
 public:
 	Token(const string& lexeme);
+	Token(const string& lexeme,unsigned line,unsigned col);
 
 	token_type get_type();
 	string get_lexeme();

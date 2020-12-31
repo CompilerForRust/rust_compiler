@@ -1,0 +1,157 @@
+------ TOKENS ------
+fn WITH TYPE FN col:1 line:1
+main WITH TYPE IDENTIFIER col:4 line:1
+( WITH TYPE LPAR col:8 line:1
+) WITH TYPE RPAR col:9 line:1
+{ WITH TYPE LBRACE col:10 line:1
+let WITH TYPE LET col:2 line:2
+a WITH TYPE IDENTIFIER col:6 line:2
+= WITH TYPE SET col:8 line:2
+1 WITH TYPE NUMBER col:10 line:2
+; WITH TYPE SEMICOLON col:11 line:2
+let WITH TYPE LET col:2 line:3
+b WITH TYPE IDENTIFIER col:6 line:3
+= WITH TYPE SET col:8 line:3
+1 WITH TYPE NUMBER col:10 line:3
+; WITH TYPE SEMICOLON col:11 line:3
+println! WITH TYPE PRINTLN col:3 line:4
+( WITH TYPE LPAR col:11 line:4
+" WITH TYPE QUOTES col:12 line:4
+aasd WITH TYPE IDENTIFIER col:13 line:4
+" WITH TYPE QUOTES col:17 line:4
+) WITH TYPE RPAR col:18 line:4
+; WITH TYPE SEMICOLON col:19 line:4
+// WITH TYPE COMMENT col:2 line:5
+if WITH TYPE IF col:3 line:6
+a WITH TYPE IDENTIFIER col:6 line:6
+== WITH TYPE EQUALITY col:7 line:6
+1 WITH TYPE NUMBER col:9 line:6
+{ WITH TYPE LBRACE col:11 line:6
+a WITH TYPE IDENTIFIER col:3 line:7
+= WITH TYPE SET col:4 line:7
+5 WITH TYPE NUMBER col:5 line:7
++ WITH TYPE PLUS col:6 line:7
+6 WITH TYPE NUMBER col:7 line:7
+* WITH TYPE STAR col:8 line:7
+3 WITH TYPE NUMBER col:9 line:7
+; WITH TYPE SEMICOLON col:10 line:7
+b WITH TYPE IDENTIFIER col:3 line:8
+= WITH TYPE SET col:4 line:8
+a WITH TYPE IDENTIFIER col:5 line:8
+* WITH TYPE STAR col:6 line:8
+( WITH TYPE LPAR col:7 line:8
+3 WITH TYPE NUMBER col:8 line:8
++ WITH TYPE PLUS col:9 line:8
+6 WITH TYPE NUMBER col:10 line:8
+) WITH TYPE RPAR col:11 line:8
+; WITH TYPE SEMICOLON col:12 line:8
+} WITH TYPE RBRACE col:2 line:9
+} WITH TYPE RBRACE col:1 line:11
+
+------ AST ------
++-Program
+  +-FunctionDefinitions
+    +-FunctionIdentifier
+      +-TOKEN (fn)
+      +-Identifier (main)
+      +-TOKEN (()
+      +-BlockExpression
+        +-TOKEN ({)
+        +-Statements
+          +-Statement
+            +-DeclarationStatement
+              +-TOKEN (let)
+              +-VariableDefinition
+                +-Variable (a)
+              +-TOKEN (=)
+              +-DeclarationRightStatement
+                +-BinaryExpression
+                  +-LHS
+                    +-PrimaryExpression
+                      +-LiteralExpression
+                        +-INTEGER_LITERAL (1)
+          +-TOKEN (;)
+          +-Statement
+            +-DeclarationStatement
+              +-TOKEN (let)
+              +-VariableDefinition
+                +-Variable (b)
+              +-TOKEN (=)
+              +-DeclarationRightStatement
+                +-BinaryExpression
+                  +-LHS
+                    +-PrimaryExpression
+                      +-LiteralExpression
+                        +-INTEGER_LITERAL (1)
+          +-TOKEN (;)
+          +-Statement
+            +-PRINTLN
+              +-TOKEN (println!)
+              +-TOKEN (()
+              +-TOKEN (")
+              +-TOKEN (")
+              +-TOKEN ())
+          +-TOKEN (;)
+          +-IfExpression
+            +-TOKEN (if)
+            +-ConditionStatement
+              +-BinaryExpression
+                +-LHS
+                  +-PrimaryExpression
+                    +-Variable (a)
+                +-OP (==)
+                +-RHS
+                  +-PrimaryExpression
+                    +-LiteralExpression
+                      +-INTEGER_LITERAL (1)
+            +-BlockExpression
+              +-TOKEN ({)
+              +-Statements
+                +-Statement
+                  +-AssignmentExpression
+                    +-Variable (a)
+                    +-AssignmentOperator (=)
+                    +-BinaryExpression
+                      +-LHS
+                        +-PrimaryExpression
+                          +-LiteralExpression
+                            +-INTEGER_LITERAL (5)
+                      +-OP (+)
+                      +-RHS
+                        +-LHS
+                          +-PrimaryExpression
+                            +-LiteralExpression
+                              +-INTEGER_LITERAL (6)
+                        +-OP (*)
+                        +-RHS
+                          +-PrimaryExpression
+                            +-LiteralExpression
+                              +-INTEGER_LITERAL (3)
+                +-TOKEN (;)
+                +-Statement
+                  +-AssignmentExpression
+                    +-Variable (b)
+                    +-AssignmentOperator (=)
+                    +-BinaryExpression
+                      +-LHS
+                        +-PrimaryExpression
+                          +-Variable (a)
+                      +-OP (*)
+                      +-RHS
+                        +-PrimaryExpression
+                          +-TOKEN (()
+                          +-BinaryExpression
+                            +-LHS
+                              +-PrimaryExpression
+                                +-LiteralExpression
+                                  +-INTEGER_LITERAL (3)
+                            +-OP (+)
+                            +-RHS
+                              +-PrimaryExpression
+                                +-LiteralExpression
+                                  +-INTEGER_LITERAL (6)
+                          +-TOKEN ())
+                +-TOKEN (;)
+              +-TOKEN (})
+        +-TOKEN (})
+
