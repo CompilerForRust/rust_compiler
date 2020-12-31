@@ -743,7 +743,7 @@ unique_ptr<Node> Parser::FunctionIdentifier(){
 }
 unique_ptr<Node> Parser::ParameterList(){
 	unique_ptr<Node>parameterListNode(new Node("", node_type::ParameterList));
-	if (tryEat(token_type::IDENTIFIER)) {
+	while (tryEat(token_type::IDENTIFIER)) {
 		auto variableChild = Variable();
 		parameterListNode->addChildNode(move(variableChild));
 
@@ -756,12 +756,8 @@ unique_ptr<Node> Parser::ParameterList(){
 		unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::Token));
 		parameterListNode->addChildNode(move(tokenNodeCOMMA));
 
-		auto parameterListChild = ParameterList();
-		parameterListNode->addChildNode(move(parameterListChild));
-
-		return parameterListNode;
 	}
-	return nullptr;
+	return parameterListNode;
 }
 unique_ptr<Node> Parser::CallParameterList(){
 	unique_ptr<Node>callParameterListNode(new Node("", node_type::CallParameterList));

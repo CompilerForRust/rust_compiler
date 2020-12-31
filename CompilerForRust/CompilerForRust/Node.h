@@ -40,7 +40,8 @@ static map<string, int> initMap() {
     BinopPrecedence["!"] = 100;
     return BinopPrecedence;
 };
-static map<string, int>BinopPrecedence=initMap();
+static const map<string, int>BinopPrecedence=initMap();
+
 
 static const char* nodeTypeList[] = {
     "Program",                        //¸ù½Úµã
