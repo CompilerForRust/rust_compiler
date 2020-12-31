@@ -6,6 +6,14 @@ Token::Token(const string& lexeme)
 
 	this->type = get_type();
 }
+Token::Token(const string& lexeme, unsigned line, unsigned col)
+{
+	this->lexeme = lexeme;
+
+	this->type = get_type();
+	this->col = col;
+	this->line = line;
+}
 
 token_type Token::get_type()
 {
