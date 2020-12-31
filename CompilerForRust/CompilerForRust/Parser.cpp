@@ -171,8 +171,7 @@ unique_ptr<Node> Parser::Statements() {
 		}
 		else if (tryEat(token_type::COMMENT)) {
 			auto commentChild = COMMENT();
-			unique_ptr<Node> statementNode(new Node("", node_type::Statement));
-			statementNode->addChildNode(move(commentChild));
+			statementsNode->addChildNode(move(commentChild));
 		}
 		else if (tryEat(token_type::WHILE) || tryEat(token_type::FOR) || tryEat(token_type::LOOP)) {
 			auto cycleExpressionChild = CycleExpression();

@@ -139,6 +139,7 @@ Value* Node::codegen() {
 		BasicBlock* BB = BasicBlock::Create(TheContext, "entry", TheFunction);
 		Builder.SetInsertPoint(BB);
 
+		NamedValues.clear();
 		for (auto& Arg : TheFunction->args())
 			NamedValues[Arg.getName()] = &Arg;
 
@@ -150,6 +151,18 @@ Value* Node::codegen() {
 
 		TheFunction->eraseFromParent();
 		return nullptr;
+	}
+	case node_type::BlockExpression: {
+		int i = 0;
+		for (i ; i < childNodes.size(); i++) {
+			if (childNodes[i]->type == node_type::Statements)
+				break;
+		}
+		Value* blockValue = childNodes[i]->codegen();
+		return blockValue;
+	}
+	case node_type::Statements: {
+
 	}
 	default:
 		return ConstantFP::get(Type::getDoubleTy(TheContext), 1.0);
