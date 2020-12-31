@@ -43,7 +43,7 @@ void Lexer::split()
 					symbol = *it;
 				}
 				tempCol = col - temp_token.size();
-				Token* new_token = new Token(temp_token,line,tempCol);
+				Token* new_token = new Token(temp_token,row,tempCol);
 				tokens.push_back(new_token);
 				temp_token.clear();
 			}
@@ -55,7 +55,7 @@ void Lexer::split()
 			{
 				temp_token = symbol;
 				tempCol = col;
-				Token* new_token = new Token(temp_token, line, tempCol);
+				Token* new_token = new Token(temp_token, row, tempCol);
 				//Token* new_token = new Token(temp_token);
 				tokens.push_back(new_token);
 				temp_token.clear();
@@ -69,7 +69,7 @@ void Lexer::split()
 				if (next_sym == '=') {
 					temp_token += next_sym;
 					tempCol = col - temp_token.size() + 1;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -77,7 +77,7 @@ void Lexer::split()
 				else {
 					col--;
 					tempCol = col;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -96,7 +96,7 @@ void Lexer::split()
 					col+=2;
 				}
 				tempCol = col - temp_token.size() + 1;
-				Token* new_token = new Token(temp_token, line, tempCol);
+				Token* new_token = new Token(temp_token, row, tempCol);
 				//Token* new_token = new Token(temp_token);
 				tokens.push_back(new_token);
 				temp_token.clear();
@@ -110,7 +110,7 @@ void Lexer::split()
 				if (next_sym == '=') {
 					temp_token += next_sym;
 					tempCol = col - temp_token.size()+1;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -118,7 +118,7 @@ void Lexer::split()
 				else {
 					col--;
 					tempCol = col;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -136,7 +136,7 @@ void Lexer::split()
 				if (next_sym == '=') {
 					temp_token += next_sym;
 					tempCol = col - temp_token.size()+1;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -144,7 +144,7 @@ void Lexer::split()
 				else {
 					col--;
 					tempCol = col;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -162,7 +162,7 @@ void Lexer::split()
 				if (next_sym == '=') {
 					temp_token += next_sym;
 					tempCol = col - temp_token.size()+1;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -170,7 +170,7 @@ void Lexer::split()
 				else {
 					col--;
 					tempCol = col;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -189,7 +189,7 @@ void Lexer::split()
 				if (next_sym == '=') {
 					temp_token += next_sym;
 					tempCol = col - temp_token.size()+1;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -197,7 +197,7 @@ void Lexer::split()
 				else if (next_sym == '>') {
 					temp_token += next_sym;
 					tempCol = col - temp_token.size()+1;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -205,7 +205,7 @@ void Lexer::split()
 				else {
 					col--;
 					tempCol = col;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -223,7 +223,7 @@ void Lexer::split()
 				if (next_sym == '=') {
 					temp_token += next_sym;
 					tempCol = col - temp_token.size()+1;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -231,7 +231,7 @@ void Lexer::split()
 				else {
 					col--;
 					tempCol = col;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -249,7 +249,7 @@ void Lexer::split()
 				if (next_sym == '=') {
 					temp_token += next_sym;
 					tempCol = col - temp_token.size()+1;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -257,22 +257,22 @@ void Lexer::split()
 				else if (next_sym == '/') {
 					temp_token += next_sym;
 					tempCol = col - temp_token.size()+1;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					it++;
 					col++;
 					while (*it != '\n') {
 						it++;
 					}
-					line++;
-					col = 1;
+					row++;
+					col = 0;
 					tokens.push_back(new_token);
 					temp_token.clear();
 				}
 				else {
 					col--;
 					tempCol = col;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -290,7 +290,7 @@ void Lexer::split()
 			if (next_sym == '=') {
 				temp_token += next_sym;
 				tempCol = col - temp_token.size()+1;
-				Token* new_token = new Token(temp_token, line, tempCol);
+				Token* new_token = new Token(temp_token, row, tempCol);
 				//Token* new_token = new Token(temp_token);
 				tokens.push_back(new_token);
 				temp_token.clear();
@@ -298,7 +298,7 @@ void Lexer::split()
 			else {
 				col--;
 				tempCol = col;
-				Token* new_token = new Token(temp_token, line, tempCol);
+				Token* new_token = new Token(temp_token, row, tempCol);
 				//Token* new_token = new Token(temp_token);
 				tokens.push_back(new_token);
 				temp_token.clear();
@@ -316,7 +316,7 @@ void Lexer::split()
 				if (next_sym == '=') {
 					temp_token += next_sym;
 					tempCol = col - temp_token.size()+1;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -330,7 +330,7 @@ void Lexer::split()
 					if (next_sym == '=') {
 						temp_token += next_sym;
 						tempCol = col - temp_token.size()+1;
-						Token* new_token = new Token(temp_token, line, tempCol);
+						Token* new_token = new Token(temp_token, row, tempCol);
 						//Token* new_token = new Token(temp_token);
 						tokens.push_back(new_token);
 						temp_token.clear();
@@ -338,7 +338,7 @@ void Lexer::split()
 					else {
 						col--;
 						tempCol = col - temp_token.size()+1;
-						Token* new_token = new Token(temp_token, line, tempCol);
+						Token* new_token = new Token(temp_token, row, tempCol);
 						//Token* new_token = new Token(temp_token);
 						tokens.push_back(new_token);
 						temp_token.clear();
@@ -349,7 +349,7 @@ void Lexer::split()
 				else {
 					col--;
 					tempCol = col;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -367,7 +367,7 @@ void Lexer::split()
 				if (next_sym == '=') {
 					temp_token += next_sym;
 					tempCol = col - temp_token.size()+1;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -381,7 +381,7 @@ void Lexer::split()
 					if (next_sym == '=') {
 						temp_token += next_sym;
 						tempCol = col - temp_token.size()+1;
-						Token* new_token = new Token(temp_token, line, tempCol);
+						Token* new_token = new Token(temp_token, row, tempCol);
 						//Token* new_token = new Token(temp_token);
 						tokens.push_back(new_token);
 						temp_token.clear();
@@ -389,7 +389,7 @@ void Lexer::split()
 					else {
 						col--;
 						tempCol = col-temp_token.size();
-						Token* new_token = new Token(temp_token, line, tempCol);
+						Token* new_token = new Token(temp_token, row, tempCol);
 						//Token* new_token = new Token(temp_token);
 						tokens.push_back(new_token);
 						temp_token.clear();
@@ -400,7 +400,7 @@ void Lexer::split()
 				else {
 					col--;
 					tempCol = col;
-					Token* new_token = new Token(temp_token, line, tempCol);
+					Token* new_token = new Token(temp_token, row, tempCol);
 					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
@@ -409,7 +409,7 @@ void Lexer::split()
 				}
 			}
 			else if (symbol == '\n') {
-			line++;
+			row++;
 			col = 0;
 			}
 		}
@@ -448,8 +448,8 @@ void Lexer::print() // Ð´ÈëÎÄ¼þ
 		cout_log(tokenTypeList[(int)token->get_type()]);
 		cout_log(" col:");
 		cout_log(to_string(token->col));
-		cout_log(" line:");
-		cout_log(to_string(token->line));
+		cout_log(" row:");
+		cout_log(to_string(token->row));
 		endl_log();
 	}
 	endl_log();

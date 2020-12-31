@@ -239,10 +239,10 @@ public:
 	string lexeme;
 	token_type type;
 	unsigned int col;
-	unsigned int line;
+	unsigned int row;
 public:
 	Token(const string& lexeme);
-	Token(const string& lexeme,unsigned line,unsigned col);
+	Token(const string& lexeme,unsigned row,unsigned col);
 
 	token_type get_type();
 	string get_lexeme();
