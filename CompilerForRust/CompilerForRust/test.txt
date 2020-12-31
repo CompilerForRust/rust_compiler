@@ -1,6 +1,7 @@
 fn main(){
 	let a = 1;
 	let b = 1;
+	let c = 'a';
 	 println!("aasd");
 	// asd
 	if a==1 {
