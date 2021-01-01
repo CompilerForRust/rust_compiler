@@ -19,3 +19,4 @@ CompilerForRust/CompilerForRust/log.txt
 *.txt
 /CompilerForRust/.vs
 CompilerForRust/CompilerForRust/CompilerForRust.vcxproj
+*.vcxproj
