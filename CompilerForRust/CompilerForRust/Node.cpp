@@ -3,7 +3,15 @@
 static LLVMContext TheContext;
 static IRBuilder<> Builder(TheContext);
 static std::unique_ptr<Module> TheModule;
-static std::map<std::string, Value*> NamedValues;
+static std::map<std::string, AllocaInst*> NamedValues;
+static std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+
+static AllocaInst* CreateEntryBlockAlloca(Function* TheFunction,
+	const std::string& VarName,Type* type) {
+	IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
+		TheFunction->getEntryBlock().begin());
+	return TmpB.CreateAlloca(type, nullptr, VarName);
+}
 
 Node::Node(const string value, node_type type) 
 {
@@ -141,7 +149,11 @@ Value* Node::codegen() {
 
 		NamedValues.clear();
 		for (auto& Arg : TheFunction->args())
-			NamedValues[Arg.getName()] = &Arg;
+		{
+			AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, Arg.getName(),Arg.getType());
+			Builder.CreateStore(&Arg, Alloca);
+			NamedValues[Arg.getName()] = Alloca;
+		}
 
 		if (Value* RetVal = childNodes[bodyIdx]->codegen()) {
 			Builder.CreateRet(RetVal);
@@ -154,14 +166,99 @@ Value* Node::codegen() {
 	}
 	case node_type::BlockExpression: {
 		int i = 0;
+		vector<string>oldNames;
+		vector<AllocaInst*>oldAllocas;
+		for (auto k = NamedValues.begin(); k != NamedValues.end();k++) {
+			oldNames.push_back(k->first);
+			oldAllocas.push_back(k->second);
+		}
 		for (i ; i < childNodes.size(); i++) {
 			if (childNodes[i]->type == node_type::Statements)
 				break;
 		}
+		if (i == 0)return nullptr;
+
 		Value* blockValue = childNodes[i]->codegen();
+
+		NamedValues.clear();
+		for (int k = 0; k < oldNames.size(); k++) {
+			NamedValues[oldNames[k]] = oldAllocas[k];
+		}
+
 		return blockValue;
 	}
 	case node_type::Statements: {
+		int idx = 0;
+		Value* returnValue;
+		for (idx; idx < childNodes.size(); idx++) {
+			node_type type = childNodes[idx]->type;
+			Value* value = nullptr;
+			if (type == node_type::Statement || type == node_type::IfExpression
+				|| type == node_type::CycleExpression) {
+				value = childNodes[idx]->codegen();
+			}
+			returnValue = value;
+		}
+		return returnValue;
+	}
+	case node_type::Statement: {
+		return childNodes[0]->codegen();
+	}
+	case node_type::DeclarationStatement: {
+		int nameIdx = -1, typeIdx = -1, rightIdx = -1;
+		string nameVal, typeValue;
+		for (int i = 0; i < childNodes.size(); i++) {
+			node_type type = childNodes[i]->type;
+			string value = childNodes[i]->value;
+			if (type == node_type::VariableDefinition) {
+				nameIdx = i;
+				for (int j = 0; j < childNodes[i]->childNodes.size(); j++) {
+					if (childNodes[i]->childNodes[j]->type == node_type::Variable) {
+						nameVal = childNodes[i]->childNodes[j]->value;
+					}
+				}
+			}
+			else if (type == node_type::DataType) {
+				typeIdx = i;
+				typeValue = value;
+			}
+			else if (type == node_type::DeclarationRightStatement) {
+				rightIdx = i;
+			}
+		}
+
+		//原来的变量
+		//std::vector<AllocaInst*> OldBindings;
+		//改为循环语句负责重置变量表
+
+
+		//找到所属函数
+		Function* TheFunction = Builder.GetInsertBlock()->getParent();
+
+		//变量类型
+		Type* valType;
+		if (typeIdx != -1) {
+			valType = getType(typeValue);
+		}
+		else {
+			valType = Type::getVoidTy(TheContext);
+		}
+		//初始值
+		Value* init = nullptr;
+		if (rightIdx != -1) {
+			init = childNodes[rightIdx]->codegen();
+		}
+
+		AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, nameVal, valType);
+		Builder.CreateStore(init, Alloca);
+		NamedValues[nameVal] = Alloca;
+
+		return nullptr;
+	}
+	case node_type::CycleExpression: {
+
+	}
+	case node_type::IfExpression: {
 
 	}
 	default:
