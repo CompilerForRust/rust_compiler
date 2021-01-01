@@ -611,12 +611,6 @@ unique_ptr<Node> Parser::IfExpression(){
 		if (tryEat(token_type::IF)) {
 			auto ifExpressionChild = IfExpression();
 			ifExpressionNode->addChildNode(move(ifExpressionChild));
-
-			unique_ptr<Node> tokenNodeELSE1(new Node(eat(token_type::ELSE), node_type::Token));
-			ifExpressionNode->addChildNode(move(tokenNodeELSE1));
-
-			auto blockExpressionChild2 = BlockExpression();
-			ifExpressionNode->addChildNode(move(blockExpressionChild2));
 		}
 		else {
 			auto blockExpressionChild3 = BlockExpression();

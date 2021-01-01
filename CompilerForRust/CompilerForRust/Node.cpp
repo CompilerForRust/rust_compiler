@@ -1,10 +1,12 @@
 #include "Node.h"
 
+
 static LLVMContext TheContext;
 static IRBuilder<> Builder(TheContext);
-static std::unique_ptr<Module> TheModule;
-static std::map<std::string, AllocaInst*> NamedValues;
-static std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+static unique_ptr<Module> TheModule;
+static map<string, AllocaInst*> NamedValues;
+static unique_ptr<legacy::FunctionPassManager> TheFPM;
+
 
 static AllocaInst* CreateEntryBlockAlloca(Function* TheFunction,
 	const std::string& VarName,Type* type) {
@@ -166,6 +168,7 @@ Value* Node::codegen() {
 	}
 	case node_type::BlockExpression: {
 		int i = 0;
+		//保存变量列表
 		vector<string>oldNames;
 		vector<AllocaInst*>oldAllocas;
 		for (auto k = NamedValues.begin(); k != NamedValues.end();k++) {
@@ -180,6 +183,7 @@ Value* Node::codegen() {
 
 		Value* blockValue = childNodes[i]->codegen();
 
+		//变量列表复原
 		NamedValues.clear();
 		for (int k = 0; k < oldNames.size(); k++) {
 			NamedValues[oldNames[k]] = oldAllocas[k];
@@ -259,6 +263,28 @@ Value* Node::codegen() {
 
 	}
 	case node_type::IfExpression: {
+		int condIdx = -1, thenIdx = -1, elseIdx = -1;
+		Value* condValue = nullptr;
+		Value* thenValue = nullptr;
+		Value* elseValue = nullptr;
+		for (int i = 0; i < childNodes.size(); i++) {
+			node_type type = childNodes[i]->type;
+			if (type == node_type::ConditionStatement) {
+				condIdx = i;
+				thenIdx = i + 1;
+			}
+			else if (type == node_type::BlockExpression && thenIdx != -1) {
+				elseIdx = i;
+			}
+		}
+
+		condValue = childNodes[condIdx]->codegen();
+		thenValue = childNodes[thenIdx]->codegen();
+		if (elseIdx != -1) {
+			elseValue = childNodes[elseIdx]->codegen();
+		}
+
+		//基本块
 
 	}
 	default:
