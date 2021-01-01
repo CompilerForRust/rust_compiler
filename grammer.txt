@@ -22,14 +22,14 @@ Basic
                         |let <VariableDefinition> : <DataType>
                         | let <VariableDefinition> = <DeclarationRightStatement>				                              
                         | let <VariableDefinition> : <DataType> = <DeclarationRightStatement>
-<DeclarationRightStatement> -> 	<LiteralExpression> | <BlockExpression> | <LogicalOrExpression> 
+<DeclarationRightStatement> -> 	<LiteralExpression> | <BlockExpression> | <BinaryExpression> 
                                | <GroupedExpression> | <FunctionCall>
 
 <VariableDefinition> -> <Variable>
                       | mut <Variable>
 <ExpressionStatement> -> <LiteralExpression>
                        | <BlockExpression>
-                       | <LogicalOrExpression>
+                       | <BinaryExpression>
                        | <GroupedExpression>
                        | <FunctionCall>
                        | <ContinueExpression>
@@ -76,7 +76,7 @@ Cycle Statement
 
 <CycleExpression> -> <WhileExpression> | <ForExpression> | <LoopExpression>
 <WhileExpression> -> while <ExpressionStatement> <BlockExpression>
-<ForExpression> -> for <Identifier> in <ShiftExpression> .. <ShiftExpression> <BlockExpression>
+<ForExpression> -> for <Identifier> in <BinaryExpression> .. <BinaryExpression> <BlockExpression>
 <LoopExpression> -> loop <BlockExpression>
 
 Conditional Statement
@@ -84,9 +84,9 @@ Conditional Statement
 
 <IfExpression> -> if <ConditionStatement>  <BlockExpression>
                 | if <ConditionStatement>  <BlockExpression> else <BlockExpression>
-                | if <ConditionStatement>  <BlockExpression> else <IfExpression> else <BlockExpression>
+                | if <ConditionStatement>  <BlockExpression> else <IfExpression> 
 
-<ConditionStatement> -> <BlockExpression> | <LogicalOrExpression> | <GroupedExpression>
+<ConditionStatement> -> <BlockExpression> | <BinaryExpression> | <GroupedExpression>
                         | <FunctionCall>  | <IfExpression>
 Function Statement
 -------------------
@@ -125,8 +125,8 @@ The given operator precedence follows: (High -> Low)
 
 
 
-<AssignmentExpression> -> <LogicalOrExpression>
-                         | <Variable> <AssignmentOperator> <LogicalOrExpression>
+<AssignmentExpression> -> <BinaryExpression>
+                         | <Variable> <AssignmentOperator> <BinaryExpression>
 
 <AssignmentOperator> -> =
                        | *=
@@ -140,56 +140,74 @@ The given operator precedence follows: (High -> Low)
                        | ^=
                        | |=
 
+<BinaryExpression> -> <LHS> <OP> <RHS> | <LHS>
+<LHS> -> <PrimaryExpression>
 
-<LogicalOrExpression> -> <LogicalAndExpression><LogicalOrExpressionE>
-<LogicalOrExpressionE> -> || <LogicalAndExpression><LogicalOrExpressionE> | e
+<OP> ->    !
+          | * / %
+          | + -
+          | << >>
+          | < <= >= >
+          | == !=
+          | &
+          | ^
+          | |
+          | &&
+          | ||
 
-<LogicalAndExpression> -> <InclusiveOrExpression><LogicalAndExpressionE>
-<LogicalAndExpressionE> -> && <InclusiveOrExpression><LogicalAndExpressionE> | e
+<PrimaryExpression> -> <Variable>                                                    
+                       | <LiteralExpression>                                         
+                       | ( <BinaryExpression> )
 
-<InclusiveOrExpression> -> <ExclusiveOrExpression><InclusiveOrExpressionE>
-<InclusiveOrExpressionE> -> | <ExclusiveOrExpression><InclusiveOrExpressionE> | e
-
-
-<ExclusiveOrExpression> -> <AndExpression><ExclusiveOrExpressionE>
-<ExclusiveOrExpressionE> ->  ^ <AndExpression><ExclusiveOrExpressionE> | e
-
-
-<AndExpression> -> <EqualityExpression><AndExpressionE>
-<AndExpressionE> -> & <EqualityExpression><AndExpressionE> | e
-
-
-<EqualityExpression> -> <RelationalExpression><EqualityExpressionE>
-<EqualityExpressionE> -> == <RelationalExpression><EqualityExpressionE> |
-                        != <RelationalExpression><EqualityExpressionE> |
-						e
-						
-<RelationalExpression> -> <ShiftExpression><RelationalExpressionE>
-<RelationalExpressionE> -> < <ShiftExpression><RelationalExpressionE> |
-                           > <ShiftExpression><RelationalExpressionE> |
-						   <= <ShiftExpression><RelationalExpressionE> |
-						   >= <ShiftExpression><RelationalExpressionE> |
-						   e
-				
-<ShiftExpression> -> <AdditiveExpression><ShiftExpressionE>
-<ShiftExpressionE> -> << <AdditiveExpression><ShiftExpressionE> |
-                      >> <AdditiveExpression><ShiftExpressionE> |
-					  e
-
-<AdditiveExpression> -> <MultiplicativeExpression><AdditiveExpressionE>
-<AdditiveExpressionE> ->  + <MultiplicativeExpression><AdditiveExpressionE>|
-                          - <MultiplicativeExpression><AdditiveExpressionE>|
-						  e
-
-<MultiplicativeExpression> -> <NotExpression><MultiplicativeExpressionE>
-<MultiplicativeExpressionE> -> * <NotExpression><MultiplicativeExpressionE> |
-                               / <NotExpression><MultiplicativeExpressionE> |
-							   % <NotExpression><MultiplicativeExpressionE> |
-							   e
-                            
-<NotExpression> -> !<PrimaryExpression>
-                | <PrimaryExpression>
-
-<PrimaryExpression> -> <Variable>
-                       | <LiteralExpression>
-                       | ( <LogicalOrExpression> )
+//消除左递归弃用					   
+/*************************************************************************************
+*<LogicalOrExpression> -> <LogicalAndExpression><BinaryExpressionE>                  *
+*<BinaryExpressionE> -> || <LogicalAndExpression><BinaryExpressionE> | e             *
+*																					 *
+*<LogicalAndExpression> -> <InclusiveOrExpression><LogicalAndExpressionE>            *
+*<LogicalAndExpressionE> -> && <InclusiveOrExpression><LogicalAndExpressionE> | e    *
+*																					 *
+*<InclusiveOrExpression> -> <ExclusiveOrExpression><InclusiveOrExpressionE>          *
+*<InclusiveOrExpressionE> -> | <ExclusiveOrExpression><InclusiveOrExpressionE> | e   *
+*																					 *
+*																					 *
+*<ExclusiveOrExpression> -> <AndExpression><ExclusiveOrExpressionE>                  *
+*<ExclusiveOrExpressionE> ->  ^ <AndExpression><ExclusiveOrExpressionE> | e          *
+*																					 *
+*																					 *
+*<AndExpression> -> <EqualityExpression><AndExpressionE>                             *
+*<AndExpressionE> -> & <EqualityExpression><AndExpressionE> | e                      *
+*																					 *
+*																					 *
+*<EqualityExpression> -> <RelationalExpression><EqualityExpressionE>                 *
+*<EqualityExpressionE> -> == <RelationalExpression><EqualityExpressionE> |           *
+*                        != <RelationalExpression><EqualityExpressionE> |            *
+*						e                                                            *
+*																					 *
+*<RelationalExpression> -> <ShiftExpression><RelationalExpressionE>                  *
+*<RelationalExpressionE> -> < <ShiftExpression><RelationalExpressionE> |             *
+*                           > <ShiftExpression><RelationalExpressionE> |             *
+*						   <= <ShiftExpression><RelationalExpressionE> |             *
+*						   >= <ShiftExpression><RelationalExpressionE> |             *
+*						   e                                                         *
+*																					 *
+*<ShiftExpression> -> <AdditiveExpression><ShiftExpressionE>                         *
+*<ShiftExpressionE> -> << <AdditiveExpression><ShiftExpressionE> |                   *
+*                      >> <AdditiveExpression><ShiftExpressionE> |                   *
+*					  e                                                              *
+*																					 *
+*<AdditiveExpression> -> <MultiplicativeExpression><AdditiveExpressionE>             *
+*<AdditiveExpressionE> ->  + <MultiplicativeExpression><AdditiveExpressionE>|        *
+*                          - <MultiplicativeExpression><AdditiveExpressionE>|        *
+*						  e                                                          *
+*																					 *
+*<MultiplicativeExpression> -> <NotExpression><MultiplicativeExpressionE>            *
+*<MultiplicativeExpressionE> -> * <NotExpression><MultiplicativeExpressionE> |       *
+*                               / <NotExpression><MultiplicativeExpressionE> |       *
+*							   % <NotExpression><MultiplicativeExpressionE> |        *
+*							   e                                                     *
+*																					 *
+*<NotExpression> -> !<PrimaryExpression>                                             *
+*                | <PrimaryExpression>                                               *
+*************************************************************************************/																					 *                                     
+		
