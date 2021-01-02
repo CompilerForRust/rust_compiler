@@ -56,6 +56,40 @@ Type* getType(string returnVal) {
 	}
 }
 
+unique_ptr<Node> LogError(const char* Str) {
+	fprintf(stderr, "Error:%s\n", Str);
+	return nullptr;
+}
+Value* LogErrorV(const char* Str) {
+	LogError(Str);
+	return nullptr;
+}
+/*
+将String转换为hash值用于switch case
+*/
+typedef std::uint64_t hash_t;
+
+constexpr hash_t prime = 0x100000001B3ull;
+constexpr hash_t basis = 0xCBF29CE484222325ull;
+
+hash_t hash_(char const* str)
+{
+	hash_t ret{ basis };
+
+	while (*str) {
+		ret ^= *str;
+		ret *= prime;
+		str++;
+	}
+
+	return ret;
+}
+constexpr hash_t hash_compile_time(char const* str, hash_t last_value = basis)
+{
+	return *str ? hash_compile_time(str + 1, (*str ^ last_value) * prime) : last_value;
+}
+
+
 Value* Node::codegen() {
 	switch (type)
 	{
@@ -118,7 +152,7 @@ Value* Node::codegen() {
 		vector<string>argNames;
 		FunctionType* TheFunctionType;
 
-		//ȷ������ֵ
+		//确定返回值
 		if (returnIdx != -1) {
 			returnType = getType(returnVal);
 		}
@@ -126,7 +160,7 @@ Value* Node::codegen() {
 			returnType = Type::getVoidTy(TheContext);
 		}
 		
-		//ȷ�������б�
+		//确定参数列表
 		for (int j = 0; j < childNodes[argsIdx]->childNodes.size(); j++) {
 			node_type type = childNodes[argsIdx]->childNodes[j]->type;
 			string value = childNodes[argsIdx]->childNodes[j]->value;
@@ -136,19 +170,19 @@ Value* Node::codegen() {
 				argNames.push_back(value);
 		}
 
-		//ȷ������ԭ��
+		//确定函数原型
 		TheFunctionType = FunctionType::get(returnType, args, false);
 
-		//ȷ������
+		//确定函数
 		TheFunction = Function::Create(TheFunctionType, Function::ExternalLinkage, nameVal, TheModule.get());
 
-		//��������
+		//参数赋名
 		int k = 0;
 		for (auto& Arg : TheFunction->args()) {
 			Arg.setName(argNames[k++]);
 		}
 
-		//������
+		//函数体
 		BasicBlock* BB = BasicBlock::Create(TheContext, "entry", TheFunction);
 		Builder.SetInsertPoint(BB);
 
@@ -169,9 +203,206 @@ Value* Node::codegen() {
 		TheFunction->eraseFromParent();
 		return nullptr;
 	}
+
+	//改过文法之后assignmentExpression现在应该只有->vari+assignOp+BinOp这种类型了吧
+	case node_type::AssignmentExpression: {
+		Value* L = childNodes[0]->codegen();
+		Value* R = childNodes[2]->codegen();	
+		Value* Tmp;
+		string assignOpValue = childNodes[1]->value;
+		const char* asValue = assignOpValue.data();
+		switch (hash_(asValue))
+		{
+		case(hash_compile_time("=")): 
+			Builder.CreateStore(R, L);
+			return nullptr;
+		case(hash_compile_time("*=")):
+			Tmp = Builder.CreateFMul(L, R, "multmp");
+			Builder.CreateStore(R, Tmp);
+		case(hash_compile_time("/=")):
+			Tmp = Builder.CreateFDiv(L, R, "divtmp");
+			Builder.CreateStore(R, Tmp);
+		case(hash_compile_time("%=")):
+			Tmp = Builder.CreateSRem(L, R, "remtmp");
+			Builder.CreateStore(R, Tmp);
+		case(hash_compile_time("+=")):
+			Tmp = Builder.CreateFAdd(L, R, "addtmp");
+			Builder.CreateStore(R, Tmp);
+		case(hash_compile_time("-=")):
+			Tmp = Builder.CreateFSub(L, R, "subtmp");
+			Builder.CreateStore(R, Tmp);
+		case(hash_compile_time("<<=")):
+			Tmp = Builder.CreateShl(L, R, "shltmp");
+			Builder.CreateStore(R, Tmp);
+		case(hash_compile_time(">>=")):
+			Tmp = Builder.CreateLShr(L, R, "LShrtmp");
+			Builder.CreateStore(R, Tmp);
+		case(hash_compile_time("&=")):
+			Tmp = Builder.CreateAnd(L, R, "andtmp");
+			Builder.CreateStore(R, Tmp);
+		case(hash_compile_time("^=")):
+			Tmp = Builder.CreateXor(L, R, "xortmp");
+			Builder.CreateStore(R, Tmp);
+		case(hash_compile_time("|=")):
+			Tmp = Builder.CreateOr(L, R, "ortmp");
+			Builder.CreateStore(R, Tmp);
+		default:
+			return LogErrorV("invalid assignment operator");
+
+		}
+
+	}
+	//后来我发现LHS可以再分LHS OP RHS ，不知道还有没有其他情况，目前操作就是加个判断看看是什么，感觉分的时候应该有一个binaryexpression会更好看一些，但好像因为左递归的问题去掉了
+	case node_type::LHS: {
+		node_type firstType = childNodes[0]->type;
+		string returnValue;
+		//直接从Binary Expression粘过来了
+		if (firstType==node_type::LHS) {
+			Value* L = childNodes[0]->codegen();
+			Value* R = childNodes[2]->codegen();
+			if (!L || !R)
+				return nullptr;
+
+			string Op = childNodes[1]->value;
+			const char* op = Op.data();
+
+			switch (hash_(op)) {
+			case hash_compile_time("+"):
+				return Builder.CreateFAdd(L, R, "addtmp");
+			case hash_compile_time("-"):
+				return Builder.CreateFSub(L, R, "subtmp");
+			case hash_compile_time("*"):
+				return Builder.CreateFMul(L, R, "multmp");
+			case hash_compile_time("/"):
+				return Builder.CreateFDiv(L, R, "divtmp");
+			case hash_compile_time("%"):
+				return Builder.CreateSRem(L, R, "remtmp");
+			case hash_compile_time("<<"):
+				return Builder.CreateShl(L, R, "shltmp");
+			case hash_compile_time(">>"):
+				return Builder.CreateLShr(L, R, "lshrtmp");
+			case hash_compile_time(">"):
+				return Builder.CreateFCmpUGT(L, R, "ugttmp");
+			case hash_compile_time(">="):
+				return Builder.CreateFCmpUGE(L, R, "ugetmp");
+			case hash_compile_time("<"):
+				return Builder.CreateFCmpULT(L, R, "ulttmp");
+			case hash_compile_time("<="):
+				return Builder.CreateFCmpULE(L, R, "uletmp");
+			case hash_compile_time("||"):
+				return Builder.CreateOr(L, R, "ortmp");
+			case hash_compile_time("&&"):
+				return Builder.CreateAnd(L, R, "andtmp");
+			case hash_compile_time("=="):
+				return Builder.CreateICmpEQ(L, R, "equtmp");
+			case hash_compile_time("!="):
+				return Builder.CreateICmpNE(L, R, "neqtmp");
+			case hash_compile_time("^"):
+				return Builder.CreateXor(L, R, "xortmp");
+				//按位与或找不到函数就先用与或凑合了
+			case hash_compile_time("|"):
+				return Builder.CreateOr(L, R, "ortmp");
+			case hash_compile_time("&"):
+				return Builder.CreateAnd(L, R, "andtmp");
+
+
+				//二进制表达式只有！没有写，考虑了一下不应该在这里去写
+
+			default:
+				return LogErrorV("invalid binary operator");
+			}
+		}
+
+		//primaryExpression
+		else
+		{
+			return childNodes[0]->codegen();
+		}
+	}
+	case node_type::RHS: {
+		for (int i = 0; i < childNodes.size(); i++) {
+			childNodes[i]->codegen();
+		}
+		return nullptr;
+	}
+	case node_type::PrimaryExpression: {
+		//1.带括号则取中间
+		node_type type = childNodes[0]->type;
+		if (type == node_type::Token) {
+			return childNodes[1]->codegen();
+		}
+		//2.literalexpression或者变量
+		else 
+		{
+			return childNodes[0]->codegen();
+		}
+	}
+	case node_type::BinaryExpression: {
+		//只有一个LHS时
+		if (childNodes.size() == 1) {
+			return childNodes[0]->codegen();
+		}
+		else
+		{
+			Value* L = childNodes[0]->codegen();
+			Value* R = childNodes[2]->codegen();
+			if (!L || !R)
+				return nullptr;
+			
+			string Op = childNodes[1]->value;
+			const char* op = Op.data();
+
+			switch (hash_(op)) {
+			case hash_compile_time("+"):
+				return Builder.CreateFAdd(L, R, "addtmp");
+			case hash_compile_time("-"):
+				return Builder.CreateFSub(L, R, "subtmp");
+			case hash_compile_time("*"):
+				return Builder.CreateFMul(L, R, "multmp");
+			case hash_compile_time("/"):
+				return Builder.CreateFDiv(L, R, "divtmp");
+			case hash_compile_time("%"):
+				return Builder.CreateSRem(L, R, "remtmp");
+			case hash_compile_time("<<"):
+				return Builder.CreateShl(L, R, "shltmp");
+			case hash_compile_time(">>"):
+				return Builder.CreateLShr(L, R, "lshrtmp");
+			case hash_compile_time(">"):
+				return Builder.CreateFCmpUGT(L, R, "ugttmp");
+			case hash_compile_time(">="):
+				return Builder.CreateFCmpUGE(L, R, "ugetmp");
+			case hash_compile_time("<"):
+				return Builder.CreateFCmpULT(L, R, "ulttmp");
+			case hash_compile_time("<="):
+				return Builder.CreateFCmpULE(L, R, "uletmp");
+			case hash_compile_time("||"):
+				return Builder.CreateOr(L, R, "ortmp");
+			case hash_compile_time("&&"):
+				return Builder.CreateAnd(L, R, "andtmp");
+			case hash_compile_time("=="):
+				return Builder.CreateICmpEQ(L, R, "equtmp");
+			case hash_compile_time("!="):
+				return Builder.CreateICmpNE(L, R, "neqtmp");
+			case hash_compile_time("^"):
+				return Builder.CreateXor(L, R, "xortmp");
+				//按位与或找不到函数就先用与或了
+			case hash_compile_time("|"):
+				return Builder.CreateOr(L, R, "ortmp");
+			case hash_compile_time("&"):
+				return Builder.CreateAnd(L, R, "andtmp");
+
+			
+
+			default:
+				return LogErrorV("invalid binary operator");
+			}
+		}
+		
+	}
+
 	case node_type::BlockExpression: {
 		int i = 0;
-		//��������б�
+		//保存变量列表
 		vector<string>oldNames;
 		vector<AllocaInst*>oldAllocas;
 		for (auto k = NamedValues.begin(); k != NamedValues.end();k++) {
@@ -186,7 +417,7 @@ Value* Node::codegen() {
 
 		Value* blockValue = childNodes[i]->codegen();
 
-		//�����б���ԭ
+		//变量列表复原
 		NamedValues.clear();
 		for (int k = 0; k < oldNames.size(); k++) {
 			NamedValues[oldNames[k]] = oldAllocas[k];
@@ -234,15 +465,15 @@ Value* Node::codegen() {
 			}
 		}
 
-		//ԭ���ı���
+		//原来的变量
 		//std::vector<AllocaInst*> OldBindings;
-		//��Ϊѭ����为�����ñ�����
+		//改为循环语句负责重置变量表
 
 
-		//�ҵ���������
+		//找到所属函数
 		Function* TheFunction = Builder.GetInsertBlock()->getParent();
 
-		//��������
+		//变量类型
 		Type* valType;
 		if (typeIdx != -1) {
 			valType = getType(typeValue);
@@ -250,7 +481,7 @@ Value* Node::codegen() {
 		else {
 			valType = Type::getVoidTy(TheContext);
 		}
-		//��ʼֵ
+		//初始值
 		Value* init = nullptr;
 		if (rightIdx != -1) {
 			init = childNodes[rightIdx]->codegen();
@@ -264,7 +495,7 @@ Value* Node::codegen() {
 	}
 	case node_type::Variable: {
 		Value* V = NamedValues[value];
-		if (!V)return IRError("û�д˱���");
+		if (!V)return IRError("没有此变量");
 		else return Builder.CreateLoad(V, value);
 	}
 	case node_type::CycleExpression: {
@@ -406,7 +637,7 @@ Value* Node::codegen() {
 		condValue = Builder.CreateICmpNE(condValue,
 			ConstantInt::get(Type::getInt1Ty(TheContext), 1), "cond");
 		Function* TheFunction = Builder.GetInsertBlock()->getParent();
-        //������
+        //基本块
 		BasicBlock* ThenBlock = BasicBlock::Create(TheContext, "ThenBlock", TheFunction);
 		BasicBlock* ElseBlock = BasicBlock::Create(TheContext, "ElseBlock", TheFunction);
 		
@@ -465,13 +696,13 @@ Value* Node::codegen() {
 		}
 		
 		Function* Callee = TheModule->getFunction(name);
-		if (!Callee)return IRError("����������");
+		if (!Callee)return IRError("函数不存在");
 		if (Args.size() != Callee->arg_size())
-			return IRError("����������ƥ��");
+			return IRError("参数数量不匹配");
 		int j = 0;
 		for (auto &calleeArg : Callee->args()) {
 			if (calleeArg.getType() != Args[j]->getType())
-				return IRError("�������Ͳ�ƥ��");
+				return IRError("参数类型不匹配");
 			j++;
 		}
 
@@ -498,6 +729,7 @@ Value* Node::codegen() {
 	case node_type::BreakExpression: {
 		return Builder.CreateRetVoid();
 	}
+
 	default:
 		return ConstantFP::get(Type::getDoubleTy(TheContext), 1.0);
 		break;
