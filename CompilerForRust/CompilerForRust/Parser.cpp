@@ -754,32 +754,28 @@ unique_ptr<Node> Parser::ParameterList(){
 }
 unique_ptr<Node> Parser::CallParameterList(){
 	unique_ptr<Node>callParameterListNode(new Node("", node_type::CallParameterList));
-	if (tryEat(token_type::IDENTIFIER)) {
-		auto variableChild = Variable();
-		callParameterListNode->addChildNode(move(variableChild));
-
-		unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::Token));
-		callParameterListNode->addChildNode(move(tokenNodeCOMMA));
-
-		auto callParameterListChild = CallParameterList();
-		callParameterListNode->addChildNode(move(callParameterListChild));
-
-		return callParameterListNode;
-	}
-	else if (tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
+	while (tryEat(token_type::IDENTIFIER) || tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
 		tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::BOOL)) {
-		auto literalExpressionChild = LiteralExpression();
-		callParameterListNode->addChildNode(move(literalExpressionChild));
+		if (tryEat(token_type::IDENTIFIER)) {
+			auto variableChild = Variable();
+			callParameterListNode->addChildNode(move(variableChild));
 
-		unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::ParameterList));
-		callParameterListNode->addChildNode(move(tokenNodeCOMMA));
+			unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::Token));
+			callParameterListNode->addChildNode(move(tokenNodeCOMMA));
 
-		auto callParameterListChild = CallParameterList();
-		callParameterListNode->addChildNode(move(callParameterListChild));
+			return callParameterListNode;
+		}
+		else if (tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
+			tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::BOOL)) {
 
-		return callParameterListNode;
+			auto literalExpressionChild = LiteralExpression();
+			callParameterListNode->addChildNode(move(literalExpressionChild));
+
+			unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::ParameterList));
+			callParameterListNode->addChildNode(move(tokenNodeCOMMA));
+		}
 	}
-	return nullptr;
+	return callParameterListNode;
 }
 unique_ptr<Node> Parser::AssignmentOperator(){
 	string value;
