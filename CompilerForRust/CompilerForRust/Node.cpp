@@ -1,13 +1,18 @@
 #include "Node.h"
-
-
-static LLVMContext TheContext;
-static IRBuilder<> Builder(TheContext);
-static unique_ptr<Module> TheModule;
+static std::unique_ptr<LLVMContext> TheContext;
+static std::unique_ptr<Module> TheModule;
+static std::unique_ptr<IRBuilder<>> Builder;
 static map<string, AllocaInst*> NamedValues;
-static unique_ptr<legacy::FunctionPassManager> TheFPM;
-
-
+void Node::Init() {
+	// Open a new context and module.
+	TheContext = std::make_unique<LLVMContext>();
+	TheModule = std::make_unique<Module>("my cool jit", *TheContext);
+	// Create a new *Builder for the module.
+	Builder = std::make_unique<IRBuilder<>>(*TheContext);
+}
+void Node::print() {
+	TheModule->print(errs(), nullptr);
+}
 static AllocaInst* CreateEntryBlockAlloca(Function* TheFunction,
 	const std::string& VarName,Type* type) {
 	IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
@@ -41,18 +46,18 @@ Value* IRError(string message) {
 	cout<<message<<endl;
 	return nullptr;
 }
-Type* getType(string returnVal) {
+Type* Node::getType(string returnVal) {
 	if (returnVal == "i16" || returnVal == "u16") {
-		return Type::getInt16Ty(TheContext);
+		return Type::getInt16Ty(*TheContext);
 	}
 	else if (returnVal == "f32") {
-		return Type::getFloatTy(TheContext);
+		return Type::getFloatTy(*TheContext);
 	}
 	else if (returnVal == "bool") {
-		return Type::getInt1Ty(TheContext);
+		return Type::getInt1Ty(*TheContext);
 	}
 	else {
-		return Type::getInt8Ty(TheContext);
+		return Type::getInt8Ty(*TheContext);
 	}
 }
 
@@ -60,7 +65,7 @@ unique_ptr<Node> LogError(const char* Str) {
 	fprintf(stderr, "Error:%s\n", Str);
 	return nullptr;
 }
-Value* LogErrorV(const char* Str) {
+Value* LogErrorVV(const char* Str) {
 	LogError(Str);
 	return nullptr;
 }
@@ -89,30 +94,29 @@ constexpr hash_t hash_compile_time(char const* str, hash_t last_value = basis)
 	return *str ? hash_compile_time(str + 1, (*str ^ last_value) * prime) : last_value;
 }
 
-
 Value* Node::codegen() {
 	switch (type)
 	{
 	case node_type::FLOAT_LITERAL:
 	{
 		double doubleVal = atof(value.c_str());
-		return ConstantFP::get(Type::getFloatTy(TheContext), doubleVal);
+		return ConstantFP::get(Type::getFloatTy(*TheContext), doubleVal);
 		break;
 	}
 	case node_type::INTEGER_LITERAL:
 	{
 		int intVal = atoi(value.c_str());
-		return ConstantInt::get(Type::getInt16Ty(TheContext), intVal);
+		return ConstantInt::get(Type::getInt16Ty(*TheContext), intVal);
 		break;
 	}
 	case node_type::BOOLEAN_LITERAL:
 	{
 		int boolVal = value == "true" ? 1 : 0;
-		return ConstantInt::get(Type::getInt1Ty(TheContext), boolVal);
+		return ConstantInt::get(Type::getInt1Ty(*TheContext), boolVal);
 		break;
 	}	
 	case node_type::CHAR_STR_LITERAL:
-		return ConstantInt::get(Type::getInt8Ty(TheContext), value[1]);
+		return ConstantInt::get(Type::getInt8Ty(*TheContext), value[1]);
 		break;
 	case node_type::Program:
 	{
@@ -146,7 +150,7 @@ Value* Node::codegen() {
 			}
 		}
 		Function* TheFunction = TheModule->getFunction(nameVal);
-		if (!TheFunction)return TheFunction;
+		if (TheFunction)return TheFunction;
 		Type* returnType;
 		vector<Type*>args;
 		vector<string>argNames;
@@ -157,7 +161,7 @@ Value* Node::codegen() {
 			returnType = getType(returnVal);
 		}
 		else {
-			returnType = Type::getVoidTy(TheContext);
+			returnType = Type::getVoidTy(*TheContext);
 		}
 		
 		//确定参数列表
@@ -183,19 +187,19 @@ Value* Node::codegen() {
 		}
 
 		//函数体
-		BasicBlock* BB = BasicBlock::Create(TheContext, "entry", TheFunction);
-		Builder.SetInsertPoint(BB);
+		BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", TheFunction);
+		Builder->SetInsertPoint(BB);
 
 		NamedValues.clear();
 		for (auto& Arg : TheFunction->args())
 		{
 			AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, (string)Arg.getName(),Arg.getType());
-			Builder.CreateStore(&Arg, Alloca);
+			Builder->CreateStore(&Arg, Alloca);
 			NamedValues[(string)Arg.getName()] = Alloca;
 		}
 
 		if (Value* RetVal = childNodes[bodyIdx]->codegen()) {
-			Builder.CreateRet(RetVal);
+			Builder->CreateRet(RetVal);
 			verifyFunction(*TheFunction);
 			return TheFunction;
 		}
@@ -214,40 +218,40 @@ Value* Node::codegen() {
 		switch (hash_(asValue))
 		{
 		case(hash_compile_time("=")): 
-			Builder.CreateStore(R, L);
+			Builder->CreateStore(R, L);
 			return nullptr;
 		case(hash_compile_time("*=")):
-			Tmp = Builder.CreateFMul(L, R, "multmp");
-			Builder.CreateStore(R, Tmp);
+			Tmp = Builder->CreateFMul(L, R, "multmp");
+			return Builder->CreateStore(R, Tmp);
 		case(hash_compile_time("/=")):
-			Tmp = Builder.CreateFDiv(L, R, "divtmp");
-			Builder.CreateStore(R, Tmp);
+			Tmp = Builder->CreateFDiv(L, R, "divtmp");
+			return Builder->CreateStore(R, Tmp);
 		case(hash_compile_time("%=")):
-			Tmp = Builder.CreateSRem(L, R, "remtmp");
-			Builder.CreateStore(R, Tmp);
+			Tmp = Builder->CreateSRem(L, R, "remtmp");
+			return Builder->CreateStore(R, Tmp);
 		case(hash_compile_time("+=")):
-			Tmp = Builder.CreateFAdd(L, R, "addtmp");
-			Builder.CreateStore(R, Tmp);
+			Tmp = Builder->CreateFAdd(L, R, "addtmp");
+			return Builder->CreateStore(R, Tmp);
 		case(hash_compile_time("-=")):
-			Tmp = Builder.CreateFSub(L, R, "subtmp");
-			Builder.CreateStore(R, Tmp);
+			Tmp = Builder->CreateFSub(L, R, "subtmp");
+			return Builder->CreateStore(R, Tmp);
 		case(hash_compile_time("<<=")):
-			Tmp = Builder.CreateShl(L, R, "shltmp");
-			Builder.CreateStore(R, Tmp);
+			Tmp = Builder->CreateShl(L, R, "shltmp");
+			return Builder->CreateStore(R, Tmp);
 		case(hash_compile_time(">>=")):
-			Tmp = Builder.CreateLShr(L, R, "LShrtmp");
-			Builder.CreateStore(R, Tmp);
+			Tmp = Builder->CreateLShr(L, R, "LShrtmp");
+			return Builder->CreateStore(R, Tmp);
 		case(hash_compile_time("&=")):
-			Tmp = Builder.CreateAnd(L, R, "andtmp");
-			Builder.CreateStore(R, Tmp);
+			Tmp = Builder->CreateAnd(L, R, "andtmp");
+			return Builder->CreateStore(R, Tmp);
 		case(hash_compile_time("^=")):
-			Tmp = Builder.CreateXor(L, R, "xortmp");
-			Builder.CreateStore(R, Tmp);
+			Tmp = Builder->CreateXor(L, R, "xortmp");
+			return Builder->CreateStore(R, Tmp);
 		case(hash_compile_time("|=")):
-			Tmp = Builder.CreateOr(L, R, "ortmp");
-			Builder.CreateStore(R, Tmp);
+			Tmp = Builder->CreateOr(L, R, "ortmp");
+			return Builder->CreateStore(R, Tmp);
 		default:
-			return LogErrorV("invalid assignment operator");
+			return LogErrorVV("invalid assignment operator");
 
 		}
 
@@ -268,48 +272,48 @@ Value* Node::codegen() {
 
 			switch (hash_(op)) {
 			case hash_compile_time("+"):
-				return Builder.CreateFAdd(L, R, "addtmp");
+				return Builder->CreateFAdd(L, R, "addtmp");
 			case hash_compile_time("-"):
-				return Builder.CreateFSub(L, R, "subtmp");
+				return Builder->CreateFSub(L, R, "subtmp");
 			case hash_compile_time("*"):
-				return Builder.CreateFMul(L, R, "multmp");
+				return Builder->CreateFMul(L, R, "multmp");
 			case hash_compile_time("/"):
-				return Builder.CreateFDiv(L, R, "divtmp");
+				return Builder->CreateFDiv(L, R, "divtmp");
 			case hash_compile_time("%"):
-				return Builder.CreateSRem(L, R, "remtmp");
+				return Builder->CreateSRem(L, R, "remtmp");
 			case hash_compile_time("<<"):
-				return Builder.CreateShl(L, R, "shltmp");
+				return Builder->CreateShl(L, R, "shltmp");
 			case hash_compile_time(">>"):
-				return Builder.CreateLShr(L, R, "lshrtmp");
+				return Builder->CreateLShr(L, R, "lshrtmp");
 			case hash_compile_time(">"):
-				return Builder.CreateFCmpUGT(L, R, "ugttmp");
+				return Builder->CreateFCmpUGT(L, R, "ugttmp");
 			case hash_compile_time(">="):
-				return Builder.CreateFCmpUGE(L, R, "ugetmp");
+				return Builder->CreateFCmpUGE(L, R, "ugetmp");
 			case hash_compile_time("<"):
-				return Builder.CreateFCmpULT(L, R, "ulttmp");
+				return Builder->CreateFCmpULT(L, R, "ulttmp");
 			case hash_compile_time("<="):
-				return Builder.CreateFCmpULE(L, R, "uletmp");
+				return Builder->CreateFCmpULE(L, R, "uletmp");
 			case hash_compile_time("||"):
-				return Builder.CreateOr(L, R, "ortmp");
+				return Builder->CreateOr(L, R, "ortmp");
 			case hash_compile_time("&&"):
-				return Builder.CreateAnd(L, R, "andtmp");
+				return Builder->CreateAnd(L, R, "andtmp");
 			case hash_compile_time("=="):
-				return Builder.CreateICmpEQ(L, R, "equtmp");
+				return Builder->CreateICmpEQ(L, R, "equtmp");
 			case hash_compile_time("!="):
-				return Builder.CreateICmpNE(L, R, "neqtmp");
+				return Builder->CreateICmpNE(L, R, "neqtmp");
 			case hash_compile_time("^"):
-				return Builder.CreateXor(L, R, "xortmp");
+				return Builder->CreateXor(L, R, "xortmp");
 				//按位与或找不到函数就先用与或凑合了
 			case hash_compile_time("|"):
-				return Builder.CreateOr(L, R, "ortmp");
+				return Builder->CreateOr(L, R, "ortmp");
 			case hash_compile_time("&"):
-				return Builder.CreateAnd(L, R, "andtmp");
+				return Builder->CreateAnd(L, R, "andtmp");
 
 
 				//二进制表达式只有！没有写，考虑了一下不应该在这里去写
 
 			default:
-				return LogErrorV("invalid binary operator");
+				return LogErrorVV("invalid binary operator");
 			}
 		}
 
@@ -354,47 +358,47 @@ Value* Node::codegen() {
 
 			switch (hash_(op)) {
 			case hash_compile_time("+"):
-				return Builder.CreateFAdd(L, R, "addtmp");
+				return Builder->CreateFAdd(L, R, "addtmp");
 			case hash_compile_time("-"):
-				return Builder.CreateFSub(L, R, "subtmp");
+				return Builder->CreateFSub(L, R, "subtmp");
 			case hash_compile_time("*"):
-				return Builder.CreateFMul(L, R, "multmp");
+				return Builder->CreateFMul(L, R, "multmp");
 			case hash_compile_time("/"):
-				return Builder.CreateFDiv(L, R, "divtmp");
+				return Builder->CreateFDiv(L, R, "divtmp");
 			case hash_compile_time("%"):
-				return Builder.CreateSRem(L, R, "remtmp");
+				return Builder->CreateSRem(L, R, "remtmp");
 			case hash_compile_time("<<"):
-				return Builder.CreateShl(L, R, "shltmp");
+				return Builder->CreateShl(L, R, "shltmp");
 			case hash_compile_time(">>"):
-				return Builder.CreateLShr(L, R, "lshrtmp");
+				return Builder->CreateLShr(L, R, "lshrtmp");
 			case hash_compile_time(">"):
-				return Builder.CreateFCmpUGT(L, R, "ugttmp");
+				return Builder->CreateFCmpUGT(L, R, "ugttmp");
 			case hash_compile_time(">="):
-				return Builder.CreateFCmpUGE(L, R, "ugetmp");
+				return Builder->CreateFCmpUGE(L, R, "ugetmp");
 			case hash_compile_time("<"):
-				return Builder.CreateFCmpULT(L, R, "ulttmp");
+				return Builder->CreateFCmpULT(L, R, "ulttmp");
 			case hash_compile_time("<="):
-				return Builder.CreateFCmpULE(L, R, "uletmp");
+				return Builder->CreateFCmpULE(L, R, "uletmp");
 			case hash_compile_time("||"):
-				return Builder.CreateOr(L, R, "ortmp");
+				return Builder->CreateOr(L, R, "ortmp");
 			case hash_compile_time("&&"):
-				return Builder.CreateAnd(L, R, "andtmp");
+				return Builder->CreateAnd(L, R, "andtmp");
 			case hash_compile_time("=="):
-				return Builder.CreateICmpEQ(L, R, "equtmp");
+				return Builder->CreateICmpEQ(L, R, "equtmp");
 			case hash_compile_time("!="):
-				return Builder.CreateICmpNE(L, R, "neqtmp");
+				return Builder->CreateICmpNE(L, R, "neqtmp");
 			case hash_compile_time("^"):
-				return Builder.CreateXor(L, R, "xortmp");
+				return Builder->CreateXor(L, R, "xortmp");
 				//按位与或找不到函数就先用与或了
 			case hash_compile_time("|"):
-				return Builder.CreateOr(L, R, "ortmp");
+				return Builder->CreateOr(L, R, "ortmp");
 			case hash_compile_time("&"):
-				return Builder.CreateAnd(L, R, "andtmp");
+				return Builder->CreateAnd(L, R, "andtmp");
 
 			
 
 			default:
-				return LogErrorV("invalid binary operator");
+				return LogErrorVV("invalid binary operator");
 			}
 		}
 		
@@ -471,7 +475,7 @@ Value* Node::codegen() {
 
 
 		//找到所属函数
-		Function* TheFunction = Builder.GetInsertBlock()->getParent();
+		Function* TheFunction = Builder->GetInsertBlock()->getParent();
 
 		//变量类型
 		Type* valType;
@@ -479,7 +483,7 @@ Value* Node::codegen() {
 			valType = getType(typeValue);
 		}
 		else {
-			valType = Type::getVoidTy(TheContext);
+			valType = Type::getVoidTy(*TheContext);
 		}
 		//初始值
 		Value* init = nullptr;
@@ -488,15 +492,15 @@ Value* Node::codegen() {
 		}
 
 		AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, nameVal, valType);
-		Builder.CreateStore(init, Alloca);
+		Builder->CreateStore(init, Alloca);
 		NamedValues[nameVal] = Alloca;
 
 		return nullptr;
 	}
 	case node_type::Variable: {
 		Value* V = NamedValues[value];
-		if (!V)return IRError("没有此变量");
-		else return Builder.CreateLoad(V, value);
+		if (!V)return IRError("None Varibal");
+		else return Builder->CreateLoad(V, value);
 	}
 	case node_type::CycleExpression: {
 		return childNodes[0]->codegen();
@@ -518,21 +522,21 @@ Value* Node::codegen() {
 				bodyIdx = i;
 			}
 		}
-		Function* TheFunction = Builder.GetInsertBlock()->getParent();
+		Function* TheFunction = Builder->GetInsertBlock()->getParent();
 
-		AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, name,Type::getInt16Ty(TheContext));
+		AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, name,Type::getInt16Ty(*TheContext));
 
 		Value* StartVal = childNodes[starIdx]->codegen();
 		if (!StartVal)
 			return nullptr;
 
-		Builder.CreateStore(StartVal, Alloca);
+		Builder->CreateStore(StartVal, Alloca);
 
-		BasicBlock* LoopBB = BasicBlock::Create(TheContext, "loop", TheFunction);
+		BasicBlock* LoopBB = BasicBlock::Create(*TheContext, "loop", TheFunction);
 
-		Builder.CreateBr(LoopBB);
+		Builder->CreateBr(LoopBB);
 
-		Builder.SetInsertPoint(LoopBB);
+		Builder->SetInsertPoint(LoopBB);
 
 		AllocaInst* OldVal = NamedValues[name];
 		NamedValues[name] = Alloca;
@@ -540,31 +544,31 @@ Value* Node::codegen() {
 		if (!childNodes[bodyIdx]->codegen())
 			return nullptr;
 
-		Value* StepVal = ConstantInt::get(Type::getInt16Ty(TheContext), 1);
+		Value* StepVal = ConstantInt::get(Type::getInt16Ty(*TheContext), 1);
 
 		Value* EndVal = childNodes[endIdx]->codegen();
 		if (!EndVal)
 			return nullptr;
 
-		Value* CurVar = Builder.CreateLoad(Alloca, name.c_str());
-		Value* NextVar = Builder.CreateFAdd(CurVar, StepVal, "nextvar");
-		Builder.CreateStore(NextVar, Alloca);
+		Value* CurVar = Builder->CreateLoad(Alloca, name.c_str());
+		Value* NextVar = Builder->CreateFAdd(CurVar, StepVal, "nextvar");
+		Builder->CreateStore(NextVar, Alloca);
 
 		Value* EndCond = new ICmpInst(*LoopBB, ICmpInst::ICMP_SLT, NextVar, EndVal);
 
 		BasicBlock* AfterBB =
-			BasicBlock::Create(TheContext, "afterloop", TheFunction);
+			BasicBlock::Create(*TheContext, "afterloop", TheFunction);
 
-		Builder.CreateCondBr(EndCond, LoopBB, AfterBB);
+		Builder->CreateCondBr(EndCond, LoopBB, AfterBB);
 
-		Builder.SetInsertPoint(AfterBB);
+		Builder->SetInsertPoint(AfterBB);
 
 		if (OldVal)
 			NamedValues[name] = OldVal;
 		else
 			NamedValues.erase(name);
 
-		return Constant::getNullValue(Type::getInt16Ty(TheContext));
+		return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 	}
 	case node_type::WhileExpression: {
 		int condIdx = -1, bodyIdx = -1;
@@ -577,27 +581,27 @@ Value* Node::codegen() {
 				bodyIdx = i;
 			}
 		}
-		Function* TheFunction = Builder.GetInsertBlock()->getParent();
+		Function* TheFunction = Builder->GetInsertBlock()->getParent();
 		Value* CondVal = childNodes[condIdx]->codegen();
-		CondVal = Builder.CreateICmpNE(CondVal,
-			ConstantInt::get(Type::getInt1Ty(TheContext), 1), "cond");
+		CondVal = Builder->CreateICmpNE(CondVal,
+			ConstantInt::get(Type::getInt1Ty(*TheContext), 1), "cond");
 
-		BasicBlock* BodyBlock = BasicBlock::Create(TheContext, "body", TheFunction);
-		BasicBlock* AfterBlcok = BasicBlock::Create(TheContext, "after", TheFunction);
+		BasicBlock* BodyBlock = BasicBlock::Create(*TheContext, "body", TheFunction);
+		BasicBlock* AfterBlcok = BasicBlock::Create(*TheContext, "after", TheFunction);
 
-		Builder.CreateCondBr(CondVal, BodyBlock, AfterBlcok);
+		Builder->CreateCondBr(CondVal, BodyBlock, AfterBlcok);
 
-		Builder.SetInsertPoint(BodyBlock);
+		Builder->SetInsertPoint(BodyBlock);
 		if (!childNodes[bodyIdx]->codegen()) {
 			return nullptr;
 		}
 		CondVal = childNodes[condIdx]->codegen();
-		CondVal = Builder.CreateICmpNE(CondVal,
-			ConstantInt::get(Type::getInt1Ty(TheContext), 1), "cond");
-		Builder.CreateCondBr(CondVal, BodyBlock, AfterBlcok);
+		CondVal = Builder->CreateICmpNE(CondVal,
+			ConstantInt::get(Type::getInt1Ty(*TheContext), 1), "cond");
+		Builder->CreateCondBr(CondVal, BodyBlock, AfterBlcok);
 
-		Builder.SetInsertPoint(AfterBlcok);
-		return Builder.CreateRetVoid();
+		Builder->SetInsertPoint(AfterBlcok);
+		return Builder->CreateRetVoid();
 
 	}
 	case node_type::LoopExpression: {
@@ -608,12 +612,12 @@ Value* Node::codegen() {
 				bodyIdx = i;
 			}
 		}
-		Function* TheFunction = Builder.GetInsertBlock()->getParent();
-		BasicBlock* BodyBlock = BasicBlock::Create(TheContext, "body", TheFunction);
-		Builder.CreateBr(BodyBlock);
-		Builder.SetInsertPoint(BodyBlock);
+		Function* TheFunction = Builder->GetInsertBlock()->getParent();
+		BasicBlock* BodyBlock = BasicBlock::Create(*TheContext, "body", TheFunction);
+		Builder->CreateBr(BodyBlock);
+		Builder->SetInsertPoint(BodyBlock);
 		if (!childNodes[bodyIdx]->codegen())return nullptr;
-		Builder.CreateBr(BodyBlock);
+		Builder->CreateBr(BodyBlock);
 	}
 	case node_type::IfExpression: {
 		int condIdx = -1, thenIdx = -1, elseIdx = -1;
@@ -634,28 +638,28 @@ Value* Node::codegen() {
 		condValue = childNodes[condIdx]->codegen();
 
 		
-		condValue = Builder.CreateICmpNE(condValue,
-			ConstantInt::get(Type::getInt1Ty(TheContext), 1), "cond");
-		Function* TheFunction = Builder.GetInsertBlock()->getParent();
+		condValue = Builder->CreateICmpNE(condValue,
+			ConstantInt::get(Type::getInt1Ty(*TheContext), 1), "cond");
+		Function* TheFunction = Builder->GetInsertBlock()->getParent();
         //基本块
-		BasicBlock* ThenBlock = BasicBlock::Create(TheContext, "ThenBlock", TheFunction);
-		BasicBlock* ElseBlock = BasicBlock::Create(TheContext, "ElseBlock", TheFunction);
+		BasicBlock* ThenBlock = BasicBlock::Create(*TheContext, "ThenBlock", TheFunction);
+		BasicBlock* ElseBlock = BasicBlock::Create(*TheContext, "ElseBlock", TheFunction);
 		
 
-		Builder.CreateCondBr(condValue, ThenBlock, ElseBlock);
+		Builder->CreateCondBr(condValue, ThenBlock, ElseBlock);
 
-		Builder.SetInsertPoint(ThenBlock);
+		Builder->SetInsertPoint(ThenBlock);
 		thenValue = childNodes[thenIdx]->codegen();
 		if (!thenValue)return nullptr;
-		Builder.CreateRet(thenValue);
+		Builder->CreateRet(thenValue);
 
 
-		Builder.SetInsertPoint(ElseBlock);
+		Builder->SetInsertPoint(ElseBlock);
 		if (elseIdx != -1) {
 			elseValue = childNodes[elseIdx]->codegen();
 		}
 		if (!elseValue)return nullptr;
-		Builder.CreateRet(ElseBlock);
+		Builder->CreateRet(ElseBlock);
 
 	}
 	case node_type::ConditionStatement: {
@@ -696,17 +700,17 @@ Value* Node::codegen() {
 		}
 		
 		Function* Callee = TheModule->getFunction(name);
-		if (!Callee)return IRError("函数不存在");
+		if (!Callee)return IRError("Function not exist");
 		if (Args.size() != Callee->arg_size())
-			return IRError("参数数量不匹配");
+			return IRError("Parameter number mismatch");
 		int j = 0;
 		for (auto &calleeArg : Callee->args()) {
 			if (calleeArg.getType() != Args[j]->getType())
-				return IRError("参数类型不匹配");
+				return IRError("Parameter type mismatch");
 			j++;
 		}
 
-		return Builder.CreateCall(Callee, Args, "call");
+		return Builder->CreateCall(Callee, Args, "call");
 	}
 	case node_type::LiteralExpression: {
 		return childNodes[0]->codegen();
@@ -724,14 +728,16 @@ Value* Node::codegen() {
 				returnVal = childNodes[i]->codegen();
 			}
 		}
-		return Builder.CreateRet(returnVal);
+		return Builder->CreateRet(returnVal);
 	}
 	case node_type::BreakExpression: {
-		return Builder.CreateRetVoid();
+		return Builder->CreateRetVoid();
 	}
 
 	default:
-		return ConstantFP::get(Type::getDoubleTy(TheContext), 1.0);
+		return ConstantFP::get(Type::getDoubleTy(*TheContext), 1.0);
 		break;
 	}
+
 }
+
