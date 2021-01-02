@@ -171,8 +171,7 @@ unique_ptr<Node> Parser::Statements() {
 		}
 		else if (tryEat(token_type::COMMENT)) {
 			auto commentChild = COMMENT();
-			unique_ptr<Node> statementNode(new Node("", node_type::Statement));
-			statementNode->addChildNode(move(commentChild));
+			statementsNode->addChildNode(move(commentChild));
 		}
 		else if (tryEat(token_type::WHILE) || tryEat(token_type::FOR) || tryEat(token_type::LOOP)) {
 			auto cycleExpressionChild = CycleExpression();
@@ -612,12 +611,6 @@ unique_ptr<Node> Parser::IfExpression(){
 		if (tryEat(token_type::IF)) {
 			auto ifExpressionChild = IfExpression();
 			ifExpressionNode->addChildNode(move(ifExpressionChild));
-
-			unique_ptr<Node> tokenNodeELSE1(new Node(eat(token_type::ELSE), node_type::Token));
-			ifExpressionNode->addChildNode(move(tokenNodeELSE1));
-
-			auto blockExpressionChild2 = BlockExpression();
-			ifExpressionNode->addChildNode(move(blockExpressionChild2));
 		}
 		else {
 			auto blockExpressionChild3 = BlockExpression();
@@ -761,32 +754,28 @@ unique_ptr<Node> Parser::ParameterList(){
 }
 unique_ptr<Node> Parser::CallParameterList(){
 	unique_ptr<Node>callParameterListNode(new Node("", node_type::CallParameterList));
-	if (tryEat(token_type::IDENTIFIER)) {
-		auto variableChild = Variable();
-		callParameterListNode->addChildNode(move(variableChild));
-
-		unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::Token));
-		callParameterListNode->addChildNode(move(tokenNodeCOMMA));
-
-		auto callParameterListChild = CallParameterList();
-		callParameterListNode->addChildNode(move(callParameterListChild));
-
-		return callParameterListNode;
-	}
-	else if (tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
+	while (tryEat(token_type::IDENTIFIER) || tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
 		tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::BOOL)) {
-		auto literalExpressionChild = LiteralExpression();
-		callParameterListNode->addChildNode(move(literalExpressionChild));
+		if (tryEat(token_type::IDENTIFIER)) {
+			auto variableChild = Variable();
+			callParameterListNode->addChildNode(move(variableChild));
 
-		unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::ParameterList));
-		callParameterListNode->addChildNode(move(tokenNodeCOMMA));
+			unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::Token));
+			callParameterListNode->addChildNode(move(tokenNodeCOMMA));
 
-		auto callParameterListChild = CallParameterList();
-		callParameterListNode->addChildNode(move(callParameterListChild));
+			return callParameterListNode;
+		}
+		else if (tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
+			tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::BOOL)) {
 
-		return callParameterListNode;
+			auto literalExpressionChild = LiteralExpression();
+			callParameterListNode->addChildNode(move(literalExpressionChild));
+
+			unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::ParameterList));
+			callParameterListNode->addChildNode(move(tokenNodeCOMMA));
+		}
 	}
-	return nullptr;
+	return callParameterListNode;
 }
 unique_ptr<Node> Parser::AssignmentOperator(){
 	string value;

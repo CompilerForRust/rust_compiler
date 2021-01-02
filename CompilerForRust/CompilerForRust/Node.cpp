@@ -1,9 +1,19 @@
 #include "Node.h"
 
+
 static LLVMContext TheContext;
 static IRBuilder<> Builder(TheContext);
-static std::unique_ptr<Module> TheModule;
-static std::map<std::string, Value*> NamedValues;
+static unique_ptr<Module> TheModule;
+static map<string, AllocaInst*> NamedValues;
+static unique_ptr<legacy::FunctionPassManager> TheFPM;
+
+
+static AllocaInst* CreateEntryBlockAlloca(Function* TheFunction,
+	const std::string& VarName,Type* type) {
+	IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
+		TheFunction->getEntryBlock().begin());
+	return TmpB.CreateAlloca(type, nullptr, VarName);
+}
 
 Node::Node(const string value, node_type type) 
 {
@@ -27,7 +37,10 @@ void Node::addChildNode(unique_ptr<Node> childNode)
 {
 	this->childNodes.push_back(move(childNode));
 }
-
+Value* IRError(string message) {
+	cout<<message<<endl;
+	return nullptr;
+}
 Type* getType(string returnVal) {
 	if (returnVal == "i16" || returnVal == "u16") {
 		return Type::getInt16Ty(TheContext);
@@ -52,7 +65,7 @@ Value* LogErrorV(const char* Str) {
 	return nullptr;
 }
 /*
-½«String×ª»»ÎªhashÖµÓÃÓÚswitch case
+å°†Stringè½¬æ¢ä¸ºhashå€¼ç”¨äºswitch case
 */
 typedef std::uint64_t hash_t;
 
@@ -139,7 +152,7 @@ Value* Node::codegen() {
 		vector<string>argNames;
 		FunctionType* TheFunctionType;
 
-		//È·¶¨·µ»ØÖµ
+		//ç¡®å®šè¿”å›å€¼
 		if (returnIdx != -1) {
 			returnType = getType(returnVal);
 		}
@@ -147,7 +160,7 @@ Value* Node::codegen() {
 			returnType = Type::getVoidTy(TheContext);
 		}
 		
-		//È·¶¨²ÎÊıÁĞ±í
+		//ç¡®å®šå‚æ•°åˆ—è¡¨
 		for (int j = 0; j < childNodes[argsIdx]->childNodes.size(); j++) {
 			node_type type = childNodes[argsIdx]->childNodes[j]->type;
 			string value = childNodes[argsIdx]->childNodes[j]->value;
@@ -157,24 +170,29 @@ Value* Node::codegen() {
 				argNames.push_back(value);
 		}
 
-		//È·¶¨º¯ÊıÔ­ĞÍ
+		//ç¡®å®šå‡½æ•°åŸå‹
 		TheFunctionType = FunctionType::get(returnType, args, false);
 
-		//È·¶¨º¯Êı
+		//ç¡®å®šå‡½æ•°
 		TheFunction = Function::Create(TheFunctionType, Function::ExternalLinkage, nameVal, TheModule.get());
 
-		//²ÎÊı¸³Ãû
+		//å‚æ•°èµ‹å
 		int k = 0;
 		for (auto& Arg : TheFunction->args()) {
 			Arg.setName(argNames[k++]);
 		}
 
-		//º¯ÊıÌå
+		//å‡½æ•°ä½“
 		BasicBlock* BB = BasicBlock::Create(TheContext, "entry", TheFunction);
 		Builder.SetInsertPoint(BB);
 
+		NamedValues.clear();
 		for (auto& Arg : TheFunction->args())
-			NamedValues[Arg.getName()] = &Arg;
+		{
+			AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, (string)Arg.getName(),Arg.getType());
+			Builder.CreateStore(&Arg, Alloca);
+			NamedValues[(string)Arg.getName()] = Alloca;
+		}
 
 		if (Value* RetVal = childNodes[bodyIdx]->codegen()) {
 			Builder.CreateRet(RetVal);
@@ -186,7 +204,7 @@ Value* Node::codegen() {
 		return nullptr;
 	}
 
-	//¸Ä¹ıÎÄ·¨Ö®ºóassignmentExpressionÏÖÔÚÓ¦¸ÃÖ»ÓĞ->vari+assignOp+BinOpÕâÖÖÀàĞÍÁË°É
+	//æ”¹è¿‡æ–‡æ³•ä¹‹åassignmentExpressionç°åœ¨åº”è¯¥åªæœ‰->vari+assignOp+BinOpè¿™ç§ç±»å‹äº†å§
 	case node_type::AssignmentExpression: {
 		Value* L = childNodes[0]->codegen();
 		Value* R = childNodes[2]->codegen();	
@@ -234,11 +252,11 @@ Value* Node::codegen() {
 		}
 
 	}
-	//ºóÀ´ÎÒ·¢ÏÖLHS¿ÉÒÔÔÙ·ÖLHS OP RHS £¬²»ÖªµÀ»¹ÓĞÃ»ÓĞÆäËûÇé¿ö£¬Ä¿Ç°²Ù×÷¾ÍÊÇ¼Ó¸öÅĞ¶Ï¿´¿´ÊÇÊ²Ã´£¬¸Ğ¾õ·ÖµÄÊ±ºòÓ¦¸ÃÓĞÒ»¸öbinaryexpression»á¸üºÃ¿´Ò»Ğ©£¬µ«ºÃÏñÒòÎª×óµİ¹éµÄÎÊÌâÈ¥µôÁË
+	//åæ¥æˆ‘å‘ç°LHSå¯ä»¥å†åˆ†LHS OP RHS ï¼Œä¸çŸ¥é“è¿˜æœ‰æ²¡æœ‰å…¶ä»–æƒ…å†µï¼Œç›®å‰æ“ä½œå°±æ˜¯åŠ ä¸ªåˆ¤æ–­çœ‹çœ‹æ˜¯ä»€ä¹ˆï¼Œæ„Ÿè§‰åˆ†çš„æ—¶å€™åº”è¯¥æœ‰ä¸€ä¸ªbinaryexpressionä¼šæ›´å¥½çœ‹ä¸€äº›ï¼Œä½†å¥½åƒå› ä¸ºå·¦é€’å½’çš„é—®é¢˜å»æ‰äº†
 	case node_type::LHS: {
 		node_type firstType = childNodes[0]->type;
 		string returnValue;
-		//Ö±½Ó´ÓBinary ExpressionÕ³¹ıÀ´ÁË
+		//ç›´æ¥ä»Binary Expressionç²˜è¿‡æ¥äº†
 		if (firstType==node_type::LHS) {
 			Value* L = childNodes[0]->codegen();
 			Value* R = childNodes[2]->codegen();
@@ -281,14 +299,14 @@ Value* Node::codegen() {
 				return Builder.CreateICmpNE(L, R, "neqtmp");
 			case hash_compile_time("^"):
 				return Builder.CreateXor(L, R, "xortmp");
-				//°´Î»Óë»òÕÒ²»µ½º¯Êı¾ÍÏÈÓÃÓë»ò´ÕºÏÁË
+				//æŒ‰ä½ä¸æˆ–æ‰¾ä¸åˆ°å‡½æ•°å°±å…ˆç”¨ä¸æˆ–å‡‘åˆäº†
 			case hash_compile_time("|"):
 				return Builder.CreateOr(L, R, "ortmp");
 			case hash_compile_time("&"):
 				return Builder.CreateAnd(L, R, "andtmp");
 
 
-				//¶ş½øÖÆ±í´ïÊ½Ö»ÓĞ£¡Ã»ÓĞĞ´£¬¿¼ÂÇÁËÒ»ÏÂ²»Ó¦¸ÃÔÚÕâÀïÈ¥Ğ´
+				//äºŒè¿›åˆ¶è¡¨è¾¾å¼åªæœ‰ï¼æ²¡æœ‰å†™ï¼Œè€ƒè™‘äº†ä¸€ä¸‹ä¸åº”è¯¥åœ¨è¿™é‡Œå»å†™
 
 			default:
 				return LogErrorV("invalid binary operator");
@@ -308,19 +326,19 @@ Value* Node::codegen() {
 		return nullptr;
 	}
 	case node_type::PrimaryExpression: {
-		//1.´øÀ¨ºÅÔòÈ¡ÖĞ¼ä
+		//1.å¸¦æ‹¬å·åˆ™å–ä¸­é—´
 		node_type type = childNodes[0]->type;
 		if (type == node_type::Token) {
 			return childNodes[1]->codegen();
 		}
-		//2.literalexpression»òÕß±äÁ¿
+		//2.literalexpressionæˆ–è€…å˜é‡
 		else 
 		{
 			return childNodes[0]->codegen();
 		}
 	}
 	case node_type::BinaryExpression: {
-		//Ö»ÓĞÒ»¸öLHSÊ±
+		//åªæœ‰ä¸€ä¸ªLHSæ—¶
 		if (childNodes.size() == 1) {
 			return childNodes[0]->codegen();
 		}
@@ -367,7 +385,7 @@ Value* Node::codegen() {
 				return Builder.CreateICmpNE(L, R, "neqtmp");
 			case hash_compile_time("^"):
 				return Builder.CreateXor(L, R, "xortmp");
-				//°´Î»Óë»òÕÒ²»µ½º¯Êı¾ÍÏÈÓÃÓë»òÁË
+				//æŒ‰ä½ä¸æˆ–æ‰¾ä¸åˆ°å‡½æ•°å°±å…ˆç”¨ä¸æˆ–äº†
 			case hash_compile_time("|"):
 				return Builder.CreateOr(L, R, "ortmp");
 			case hash_compile_time("&"):
@@ -381,7 +399,337 @@ Value* Node::codegen() {
 		}
 		
 	}
-	
+
+	case node_type::BlockExpression: {
+		int i = 0;
+		//ä¿å­˜å˜é‡åˆ—è¡¨
+		vector<string>oldNames;
+		vector<AllocaInst*>oldAllocas;
+		for (auto k = NamedValues.begin(); k != NamedValues.end();k++) {
+			oldNames.push_back(k->first);
+			oldAllocas.push_back(k->second);
+		}
+		for (i ; i < childNodes.size(); i++) {
+			if (childNodes[i]->type == node_type::Statements)
+				break;
+		}
+		if (i == 0)return nullptr;
+
+		Value* blockValue = childNodes[i]->codegen();
+
+		//å˜é‡åˆ—è¡¨å¤åŸ
+		NamedValues.clear();
+		for (int k = 0; k < oldNames.size(); k++) {
+			NamedValues[oldNames[k]] = oldAllocas[k];
+		}
+
+		return blockValue;
+	}
+	case node_type::Statements: {
+		int idx = 0;
+		Value* returnValue;
+		for (idx; idx < childNodes.size(); idx++) {
+			node_type type = childNodes[idx]->type;
+			Value* value = nullptr;
+			if (type == node_type::Statement || type == node_type::IfExpression
+				|| type == node_type::CycleExpression) {
+				value = childNodes[idx]->codegen();
+			}
+			returnValue = value;
+		}
+		return returnValue;
+	}
+	case node_type::Statement: {
+		return childNodes[0]->codegen();
+	}
+	case node_type::DeclarationStatement: {
+		int nameIdx = -1, typeIdx = -1, rightIdx = -1;
+		string nameVal, typeValue;
+		for (int i = 0; i < childNodes.size(); i++) {
+			node_type type = childNodes[i]->type;
+			string value = childNodes[i]->value;
+			if (type == node_type::VariableDefinition) {
+				nameIdx = i;
+				for (int j = 0; j < childNodes[i]->childNodes.size(); j++) {
+					if (childNodes[i]->childNodes[j]->type == node_type::Variable) {
+						nameVal = childNodes[i]->childNodes[j]->value;
+					}
+				}
+			}
+			else if (type == node_type::DataType) {
+				typeIdx = i;
+				typeValue = value;
+			}
+			else if (type == node_type::DeclarationRightStatement) {
+				rightIdx = i;
+			}
+		}
+
+		//åŸæ¥çš„å˜é‡
+		//std::vector<AllocaInst*> OldBindings;
+		//æ”¹ä¸ºå¾ªç¯è¯­å¥è´Ÿè´£é‡ç½®å˜é‡è¡¨
+
+
+		//æ‰¾åˆ°æ‰€å±å‡½æ•°
+		Function* TheFunction = Builder.GetInsertBlock()->getParent();
+
+		//å˜é‡ç±»å‹
+		Type* valType;
+		if (typeIdx != -1) {
+			valType = getType(typeValue);
+		}
+		else {
+			valType = Type::getVoidTy(TheContext);
+		}
+		//åˆå§‹å€¼
+		Value* init = nullptr;
+		if (rightIdx != -1) {
+			init = childNodes[rightIdx]->codegen();
+		}
+
+		AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, nameVal, valType);
+		Builder.CreateStore(init, Alloca);
+		NamedValues[nameVal] = Alloca;
+
+		return nullptr;
+	}
+	case node_type::Variable: {
+		Value* V = NamedValues[value];
+		if (!V)return IRError("æ²¡æœ‰æ­¤å˜é‡");
+		else return Builder.CreateLoad(V, value);
+	}
+	case node_type::CycleExpression: {
+		return childNodes[0]->codegen();
+	}
+	case node_type::ForExpression: {
+		string name;
+		int starIdx = -1, endIdx = -1, bodyIdx = -1;
+		for (int i = 0; i < childNodes.size(); i++) {
+			auto type = childNodes[i]->type;
+			auto value = childNodes[i]->value;
+			if (type == node_type::Identifier) {
+				name = value;
+				starIdx = i + 2;
+			}
+			else if (type == node_type::BinaryExpression && starIdx != -1) {
+				endIdx = i;
+			}
+			else if (type == node_type::BlockExpression) {
+				bodyIdx = i;
+			}
+		}
+		Function* TheFunction = Builder.GetInsertBlock()->getParent();
+
+		AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, name,Type::getInt16Ty(TheContext));
+
+		Value* StartVal = childNodes[starIdx]->codegen();
+		if (!StartVal)
+			return nullptr;
+
+		Builder.CreateStore(StartVal, Alloca);
+
+		BasicBlock* LoopBB = BasicBlock::Create(TheContext, "loop", TheFunction);
+
+		Builder.CreateBr(LoopBB);
+
+		Builder.SetInsertPoint(LoopBB);
+
+		AllocaInst* OldVal = NamedValues[name];
+		NamedValues[name] = Alloca;
+
+		if (!childNodes[bodyIdx]->codegen())
+			return nullptr;
+
+		Value* StepVal = ConstantInt::get(Type::getInt16Ty(TheContext), 1);
+
+		Value* EndVal = childNodes[endIdx]->codegen();
+		if (!EndVal)
+			return nullptr;
+
+		Value* CurVar = Builder.CreateLoad(Alloca, name.c_str());
+		Value* NextVar = Builder.CreateFAdd(CurVar, StepVal, "nextvar");
+		Builder.CreateStore(NextVar, Alloca);
+
+		Value* EndCond = new ICmpInst(*LoopBB, ICmpInst::ICMP_SLT, NextVar, EndVal);
+
+		BasicBlock* AfterBB =
+			BasicBlock::Create(TheContext, "afterloop", TheFunction);
+
+		Builder.CreateCondBr(EndCond, LoopBB, AfterBB);
+
+		Builder.SetInsertPoint(AfterBB);
+
+		if (OldVal)
+			NamedValues[name] = OldVal;
+		else
+			NamedValues.erase(name);
+
+		return Constant::getNullValue(Type::getInt16Ty(TheContext));
+	}
+	case node_type::WhileExpression: {
+		int condIdx = -1, bodyIdx = -1;
+		for (int i = 0; i < childNodes.size(); i++) {
+			auto type = childNodes[i]->type;
+			if (type == node_type::ExpressionStatement) {
+				condIdx = i;
+			}
+			else if (type == node_type::BlockExpression) {
+				bodyIdx = i;
+			}
+		}
+		Function* TheFunction = Builder.GetInsertBlock()->getParent();
+		Value* CondVal = childNodes[condIdx]->codegen();
+		CondVal = Builder.CreateICmpNE(CondVal,
+			ConstantInt::get(Type::getInt1Ty(TheContext), 1), "cond");
+
+		BasicBlock* BodyBlock = BasicBlock::Create(TheContext, "body", TheFunction);
+		BasicBlock* AfterBlcok = BasicBlock::Create(TheContext, "after", TheFunction);
+
+		Builder.CreateCondBr(CondVal, BodyBlock, AfterBlcok);
+
+		Builder.SetInsertPoint(BodyBlock);
+		if (!childNodes[bodyIdx]->codegen()) {
+			return nullptr;
+		}
+		CondVal = childNodes[condIdx]->codegen();
+		CondVal = Builder.CreateICmpNE(CondVal,
+			ConstantInt::get(Type::getInt1Ty(TheContext), 1), "cond");
+		Builder.CreateCondBr(CondVal, BodyBlock, AfterBlcok);
+
+		Builder.SetInsertPoint(AfterBlcok);
+		return Builder.CreateRetVoid();
+
+	}
+	case node_type::LoopExpression: {
+		int bodyIdx = -1;
+		for (int i = 0; i < childNodes.size(); i++) {
+			auto type = childNodes[i]->type;
+			if (type == node_type::BlockExpression) {
+				bodyIdx = i;
+			}
+		}
+		Function* TheFunction = Builder.GetInsertBlock()->getParent();
+		BasicBlock* BodyBlock = BasicBlock::Create(TheContext, "body", TheFunction);
+		Builder.CreateBr(BodyBlock);
+		Builder.SetInsertPoint(BodyBlock);
+		if (!childNodes[bodyIdx]->codegen())return nullptr;
+		Builder.CreateBr(BodyBlock);
+	}
+	case node_type::IfExpression: {
+		int condIdx = -1, thenIdx = -1, elseIdx = -1;
+		Value* condValue = nullptr;
+		Value* thenValue = nullptr;
+		Value* elseValue = nullptr;
+		for (int i = 0; i < childNodes.size(); i++) {
+			node_type type = childNodes[i]->type;
+			if (type == node_type::ConditionStatement) {
+				condIdx = i;
+				thenIdx = i + 1;
+			}
+			else if (type == node_type::BlockExpression && thenIdx != -1) {
+				elseIdx = i;
+			}
+		}
+
+		condValue = childNodes[condIdx]->codegen();
+
+		
+		condValue = Builder.CreateICmpNE(condValue,
+			ConstantInt::get(Type::getInt1Ty(TheContext), 1), "cond");
+		Function* TheFunction = Builder.GetInsertBlock()->getParent();
+        //åŸºæœ¬å—
+		BasicBlock* ThenBlock = BasicBlock::Create(TheContext, "ThenBlock", TheFunction);
+		BasicBlock* ElseBlock = BasicBlock::Create(TheContext, "ElseBlock", TheFunction);
+		
+
+		Builder.CreateCondBr(condValue, ThenBlock, ElseBlock);
+
+		Builder.SetInsertPoint(ThenBlock);
+		thenValue = childNodes[thenIdx]->codegen();
+		if (!thenValue)return nullptr;
+		Builder.CreateRet(thenValue);
+
+
+		Builder.SetInsertPoint(ElseBlock);
+		if (elseIdx != -1) {
+			elseValue = childNodes[elseIdx]->codegen();
+		}
+		if (!elseValue)return nullptr;
+		Builder.CreateRet(ElseBlock);
+
+	}
+	case node_type::ConditionStatement: {
+		Value* conditionStatementVal = childNodes[0]->codegen();
+		return conditionStatementVal;
+	}
+	case node_type::GroupedExpression: {
+		Value* groupedExpressionVal;
+		for (int i = 0; i < childNodes.size(); i++) {
+			if (childNodes[i]->type == node_type::ExpressionStatement)
+				groupedExpressionVal = childNodes[i]->codegen();
+		}
+		return groupedExpressionVal;
+	}
+	case node_type::FunctionCall: {
+		int argsIdx = -1;
+		string name;
+		for (int i = 0; i < childNodes.size(); i++) {
+			auto type = childNodes[i]->type;
+			auto value = childNodes[i]->value;
+			if (type == node_type::FunctionIdentifier) {
+				name = value;
+			}
+			else if (type == node_type::CallParameterList) {
+				argsIdx = i;
+			}
+		}
+		vector<Value*>Args;
+		for (int k = 0; k < childNodes[argsIdx]->childNodes.size(); k++) {
+			auto type = childNodes[argsIdx]->childNodes[k]->type;
+			auto value = childNodes[argsIdx]->childNodes[k]->value;
+			if (type == node_type::Variable) {
+				Args.push_back(childNodes[argsIdx]->childNodes[k]->codegen());
+			}
+			else if (type == node_type::LiteralExpression) {
+				Args.push_back(childNodes[argsIdx]->childNodes[k]->childNodes[0]->codegen());
+			}
+		}
+		
+		Function* Callee = TheModule->getFunction(name);
+		if (!Callee)return IRError("å‡½æ•°ä¸å­˜åœ¨");
+		if (Args.size() != Callee->arg_size())
+			return IRError("å‚æ•°æ•°é‡ä¸åŒ¹é…");
+		int j = 0;
+		for (auto &calleeArg : Callee->args()) {
+			if (calleeArg.getType() != Args[j]->getType())
+				return IRError("å‚æ•°ç±»å‹ä¸åŒ¹é…");
+			j++;
+		}
+
+		return Builder.CreateCall(Callee, Args, "call");
+	}
+	case node_type::LiteralExpression: {
+		return childNodes[0]->codegen();
+	}
+	case node_type::DeclarationRightStatement: {
+		return childNodes[0]->codegen();
+	}
+	case node_type::ExpressionStatement: {
+		return childNodes[0]->codegen();
+	}
+	case node_type::ReturnExpression: {
+		Value* returnVal = nullptr;
+		for (int i = 0; i < childNodes.size(); i++) {
+			if (childNodes[i]->type == node_type::ExpressionStatement) {
+				returnVal = childNodes[i]->codegen();
+			}
+		}
+		return Builder.CreateRet(returnVal);
+	}
+	case node_type::BreakExpression: {
+		return Builder.CreateRetVoid();
+	}
+
 	default:
 		return ConstantFP::get(Type::getDoubleTy(TheContext), 1.0);
 		break;

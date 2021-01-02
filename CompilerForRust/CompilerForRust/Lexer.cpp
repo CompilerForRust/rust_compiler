@@ -37,11 +37,13 @@ void Lexer::split()
 				if (temp_token == "println" && next_sym == '!')
 				{
 					temp_token += next_sym;
-					
+
 					it++;
+					col++;
 					symbol = *it;
 				}
-				Token* new_token = new Token(temp_token);
+				tempCol = col - temp_token.size();
+				Token* new_token = new Token(temp_token,row,tempCol);
 				tokens.push_back(new_token);
 				temp_token.clear();
 			}
@@ -52,23 +54,31 @@ void Lexer::split()
 				)
 			{
 				temp_token = symbol;
-				Token* new_token = new Token(temp_token);
+				tempCol = col;
+				Token* new_token = new Token(temp_token, row, tempCol);
+				//Token* new_token = new Token(temp_token);
 				tokens.push_back(new_token);
 				temp_token.clear();
 			}
 			else if (symbol == '=') {
 				it++;
+				col++;
 				char next_sym = *it;
 
 				temp_token = symbol;
 				if (next_sym == '=') {
 					temp_token += next_sym;
-					Token* new_token = new Token(temp_token);
+					tempCol = col - temp_token.size() + 1;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 				}
 				else {
-					Token* new_token = new Token(temp_token);
+					col--;
+					tempCol = col;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 					it--;
@@ -83,169 +93,231 @@ void Lexer::split()
 					temp_token += next_sym;
 					temp_token += next_two_sym;
 					it += 2;
+					col+=2;
 				}
-				Token* new_token = new Token(temp_token);
+				tempCol = col - temp_token.size() + 1;
+				Token* new_token = new Token(temp_token, row, tempCol);
+				//Token* new_token = new Token(temp_token);
 				tokens.push_back(new_token);
 				temp_token.clear();
 			}
 			else if (symbol == '+') {
 				it++;
+				col++;
 				char next_sym = *it;
 
 				temp_token = symbol;
 				if (next_sym == '=') {
 					temp_token += next_sym;
-					Token* new_token = new Token(temp_token);
+					tempCol = col - temp_token.size()+1;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 				}
 				else {
-					Token* new_token = new Token(temp_token);
+					col--;
+					tempCol = col;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 					it--;
+					
 				}
 
 			}
 			else if (symbol == '!') {
 				it++;
+				col++;
 				char next_sym = *it;
 
 				temp_token = symbol;
 				if (next_sym == '=') {
 					temp_token += next_sym;
-					Token* new_token = new Token(temp_token);
+					tempCol = col - temp_token.size()+1;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 				}
 				else {
-					Token* new_token = new Token(temp_token);
+					col--;
+					tempCol = col;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 					it--;
+					
 				}
 
 			}
 			else if (symbol == '^') {
 				it++;
+				col++;
 				char next_sym = *it;
 
 				temp_token = symbol;
 				if (next_sym == '=') {
 					temp_token += next_sym;
-					Token* new_token = new Token(temp_token);
+					tempCol = col - temp_token.size()+1;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 				}
 				else {
-					Token* new_token = new Token(temp_token);
+					col--;
+					tempCol = col;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 					it--;
+					
 				}
 
 			}
 			else if (symbol == '-')
 			{
 				it++;
+				col++;
 				char next_sym = *it;
 
 				temp_token = symbol;
 				if (next_sym == '=') {
 					temp_token += next_sym;
-					Token* new_token = new Token(temp_token);
+					tempCol = col - temp_token.size()+1;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 				}
 				else if (next_sym == '>') {
 					temp_token += next_sym;
-					Token* new_token = new Token(temp_token);
+					tempCol = col - temp_token.size()+1;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 				}
 				else {
-					Token* new_token = new Token(temp_token);
+					col--;
+					tempCol = col;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 					it--;
+					
 				}
 
 			}
 			else if (symbol == '*') {
 				it++;
+				col++;
 				char next_sym = *it;
 
 				temp_token = symbol;
 				if (next_sym == '=') {
 					temp_token += next_sym;
-					Token* new_token = new Token(temp_token);
+					tempCol = col - temp_token.size()+1;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 				}
 				else {
-					Token* new_token = new Token(temp_token);
+					col--;
+					tempCol = col;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 					it--;
+					
 				}
 
 			}
 			else if (symbol == '/') {
 				it++;
+				col++;
 				char next_sym = *it;
 
 				temp_token = symbol;
 				if (next_sym == '=') {
 					temp_token += next_sym;
-					Token* new_token = new Token(temp_token);
+					tempCol = col - temp_token.size()+1;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 				}
 				else if (next_sym == '/') {
 					temp_token += next_sym;
-					Token* new_token = new Token(temp_token);
+					tempCol = col - temp_token.size()+1;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					it++;
+					col++;
 					while (*it != '\n') {
 						it++;
 					}
+					row++;
+					col = 0;
 					tokens.push_back(new_token);
 					temp_token.clear();
 				}
 				else {
-					Token* new_token = new Token(temp_token);
+					col--;
+					tempCol = col;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 					it--;
+					
 				}
 
 			}
 			else if (symbol == '%') {
 			it++;
+			col++;
 			char next_sym = *it;
 
 			temp_token = symbol;
 			if (next_sym == '=') {
 				temp_token += next_sym;
-				Token* new_token = new Token(temp_token);
+				tempCol = col - temp_token.size()+1;
+				Token* new_token = new Token(temp_token, row, tempCol);
+				//Token* new_token = new Token(temp_token);
 				tokens.push_back(new_token);
 				temp_token.clear();
 			}
 			else {
-				Token* new_token = new Token(temp_token);
+				col--;
+				tempCol = col;
+				Token* new_token = new Token(temp_token, row, tempCol);
+				//Token* new_token = new Token(temp_token);
 				tokens.push_back(new_token);
 				temp_token.clear();
 				it--;
+				
 			}
 
 			}
 			else if (symbol == '<') {
 				it++;
+				col++;
 				char next_sym = *it;
 
 				temp_token = symbol;
 				if (next_sym == '=') {
 					temp_token += next_sym;
-					Token* new_token = new Token(temp_token);
+					tempCol = col - temp_token.size()+1;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 				}
@@ -253,36 +325,50 @@ void Lexer::split()
 				{
 					temp_token += next_sym;
 					it++;
+					col++;
 					next_sym = *it;
 					if (next_sym == '=') {
 						temp_token += next_sym;
-						Token* new_token = new Token(temp_token);
+						tempCol = col - temp_token.size()+1;
+						Token* new_token = new Token(temp_token, row, tempCol);
+						//Token* new_token = new Token(temp_token);
 						tokens.push_back(new_token);
 						temp_token.clear();
 					}
 					else {
-						Token* new_token = new Token(temp_token);
+						col--;
+						tempCol = col - temp_token.size()+1;
+						Token* new_token = new Token(temp_token, row, tempCol);
+						//Token* new_token = new Token(temp_token);
 						tokens.push_back(new_token);
 						temp_token.clear();
 						it--;
+						
 					}
 				}
 				else {
-					Token* new_token = new Token(temp_token);
+					col--;
+					tempCol = col;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 					it--;
+					
 				}
 			}
 
 			else if (symbol == '>') {
 				it++;
+				col++;
 				char next_sym = *it;
 
 				temp_token = symbol;
 				if (next_sym == '=') {
 					temp_token += next_sym;
-					Token* new_token = new Token(temp_token);
+					tempCol = col - temp_token.size()+1;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 				}
@@ -290,31 +376,47 @@ void Lexer::split()
 				{
 					temp_token += next_sym;
 					it++;
+					col++;
 					next_sym = *it;
 					if (next_sym == '=') {
 						temp_token += next_sym;
-						Token* new_token = new Token(temp_token);
+						tempCol = col - temp_token.size()+1;
+						Token* new_token = new Token(temp_token, row, tempCol);
+						//Token* new_token = new Token(temp_token);
 						tokens.push_back(new_token);
 						temp_token.clear();
 					}
 					else {
-						Token* new_token = new Token(temp_token);
+						col--;
+						tempCol = col-temp_token.size();
+						Token* new_token = new Token(temp_token, row, tempCol);
+						//Token* new_token = new Token(temp_token);
 						tokens.push_back(new_token);
 						temp_token.clear();
 						it--;
+						
 					}
 				}
 				else {
-					Token* new_token = new Token(temp_token);
+					col--;
+					tempCol = col;
+					Token* new_token = new Token(temp_token, row, tempCol);
+					//Token* new_token = new Token(temp_token);
 					tokens.push_back(new_token);
 					temp_token.clear();
 					it--;
+					
 				}
+			}
+			else if (symbol == '\n') {
+			row++;
+			col = 0;
 			}
 		}
 		else {
 				temp_token += symbol;
 		}	
+		col++;
 	}
 }
 
@@ -344,6 +446,10 @@ void Lexer::print() // Ð´ÈëÎÄ¼þ
 		cout_log(token->get_lexeme());
 		cout_log(" WITH TYPE ");
 		cout_log(tokenTypeList[(int)token->get_type()]);
+		cout_log(" col:");
+		cout_log(to_string(token->col));
+		cout_log(" row:");
+		cout_log(to_string(token->row));
 		endl_log();
 	}
 	endl_log();

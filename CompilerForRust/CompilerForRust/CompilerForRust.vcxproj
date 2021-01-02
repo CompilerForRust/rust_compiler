@@ -133,7 +133,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\compiler\release\examples\Kaleidoscope\Chapter3;E:\compiler\llvm-9.0.0.src\examples\Kaleidoscope\Chapter3;E:\compiler\release\include;E:\compiler\llvm-9.0.0.src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\compiler\release\include;E:\compiler\llvm-9.0.0.src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -14,6 +14,9 @@ public:
 	string code;
 	vector<Token*> tokens;
 	size_t current_token_index;
+	unsigned int row = 1;		//ÐÐºÅ
+	unsigned int col = 1;		//ÁÐºÅ
+	unsigned int tempCol = col;
 public:
 	Lexer(const string file);
 
