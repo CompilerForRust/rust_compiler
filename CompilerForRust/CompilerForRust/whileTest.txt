@@ -1,0 +1,19 @@
+fn main()
+{
+
+	let sum = 0;
+	
+	let b : i16 = 0;
+	
+  while b < 5
+  
+  {
+	sum += b;
+	
+	b += 1;
+	
+	let temp = sum + b;
+	
+  }
+  
+}

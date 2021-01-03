@@ -3,7 +3,7 @@
 using namespace std;
 
 int main() {
-	string file = "test.txt";
+	string file = "loopTest.txt";
 	Parser parser(file);
 	parser.parse();
 	parser.ast->tree->Init();
