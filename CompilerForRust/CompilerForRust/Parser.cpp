@@ -306,7 +306,9 @@ unique_ptr<Node> Parser::ExpressionStatement(){
 	else if (tryEat(token_type::LPAR))
 		child = GroupedExpression();
 	else if (tryEat(token_type::IDENTIFIER))
-		child = FunctionCall();
+		if (tryEat(token_type::LPAR, 1))
+			child = FunctionCall();
+		else child = BinaryExpression();
 	else if (tryEat(token_type::CONTINUE))
 		child = ContinueExpression();
 	else if (tryEat(token_type::BREAK))
@@ -364,6 +366,7 @@ unique_ptr<Node> Parser::VariableDefinition(){
 }
 unique_ptr<Node> Parser::DataType(){
 	string value;
+	cout << nowToken();
 	if (tryEat(token_type::I16))
 		value = eat(token_type::I16);
 	else if (tryEat(token_type::U16))
@@ -620,7 +623,7 @@ unique_ptr<Node> Parser::IfExpression(){
 	return ifExpressionNode;
 }
 unique_ptr<Node> Parser::ReturnExpression(){ 
-	unique_ptr<Node> returnExpressionNode(new Node("", node_type::BlockExpression));
+	unique_ptr<Node> returnExpressionNode(new Node("", node_type::ReturnExpression));
 
 	unique_ptr<Node> tokenNodeRETURN(new Node(eat(token_type::RETURN), node_type::Token));
 	returnExpressionNode->addChildNode(move(tokenNodeRETURN));
@@ -745,10 +748,12 @@ unique_ptr<Node> Parser::ParameterList(){
 
 		auto dataTypeNode = DataType();
 		parameterListNode->addChildNode(move(dataTypeNode));
-
-		unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::Token));
-		parameterListNode->addChildNode(move(tokenNodeCOMMA));
-
+		if (tryEat(token_type::RPAR))
+			break;
+		else {
+			unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::Token));
+			parameterListNode->addChildNode(move(tokenNodeCOMMA));
+		}
 	}
 	return parameterListNode;
 }
@@ -759,18 +764,19 @@ unique_ptr<Node> Parser::CallParameterList(){
 		if (tryEat(token_type::IDENTIFIER)) {
 			auto variableChild = Variable();
 			callParameterListNode->addChildNode(move(variableChild));
-
+			if (tryEat(token_type::RPAR))
+				break;
 			unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::Token));
 			callParameterListNode->addChildNode(move(tokenNodeCOMMA));
 
-			return callParameterListNode;
 		}
 		else if (tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
 			tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::BOOL)) {
 
 			auto literalExpressionChild = LiteralExpression();
 			callParameterListNode->addChildNode(move(literalExpressionChild));
-
+			if (tryEat(token_type::RPAR))
+				break;
 			unique_ptr<Node>tokenNodeCOMMA(new Node(eat(token_type::COMMA), node_type::ParameterList));
 			callParameterListNode->addChildNode(move(tokenNodeCOMMA));
 		}
