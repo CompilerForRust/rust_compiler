@@ -231,13 +231,16 @@ Value* Node::codegen() {
 		const char* asValue = assignOpValue.data();
 		switch (hash_(asValue))
 		{
-		case(hash_compile_time("=")): 
+		case(hash_compile_time("=")):
 			return Builder->CreateStore(R, address);
 		case(hash_compile_time("*=")):
-			Tmp = Builder->CreateMul(L, R, "multmp");
+			if (L->getType() == Type::getInt16Ty(*TheContext))
+				Tmp = Builder->CreateMul(L, R, "multmp");
+			else if (L->getType() == Type::getFloatTy(*TheContext))
+				Tmp = Builder->CreateFMul(L, R, "multmp");
 			return Builder->CreateStore(Tmp, address);
 		case(hash_compile_time("/=")):
-			if(L->getType()==Type::getInt16Ty(*TheContext))
+			if (L->getType() == Type::getInt16Ty(*TheContext))
 				Tmp = Builder->CreateSDiv(L, R, "divtmp");
 			if (L->getType() == Type::getFloatTy(*TheContext))
 				Tmp = Builder->CreateFDiv(L, R, "divtmp");
@@ -246,10 +249,16 @@ Value* Node::codegen() {
 			Tmp = Builder->CreateSRem(L, R, "remtmp");
 			return Builder->CreateStore(Tmp, address);
 		case(hash_compile_time("+=")):
-			Tmp = Builder->CreateAdd(L, R, "addtmp");
+			if (L->getType() == Type::getInt16Ty(*TheContext))
+				Tmp = Builder->CreateAdd(L, R, "addtmp");
+			else if (L->getType() == Type::getFloatTy(*TheContext))
+				Tmp = Builder->CreateFAdd(L, R, "addtmp");
 			return Builder->CreateStore(Tmp, address);
 		case(hash_compile_time("-=")):
-			Tmp = Builder->CreateSub(L, R, "subtmp");
+			if (L->getType() == Type::getInt16Ty(*TheContext))
+				Tmp = Builder->CreateSub(L, R, "subtmp");
+			else if (L->getType() == Type::getFloatTy(*TheContext))
+				Tmp = Builder->CreateFSub(L, R, "subtmp");
 			return Builder->CreateStore(Tmp, address);
 		case(hash_compile_time("<<=")):
 			Tmp = Builder->CreateShl(L, R, "shltmp");
@@ -288,11 +297,20 @@ Value* Node::codegen() {
 
 			switch (hash_(op)) {
 			case hash_compile_time("+"):
-				return Builder->CreateAdd(L, R, "addtmp");
+				if (L->getType() == Type::getFloatTy(*TheContext))
+					return Builder->CreateFAdd(L, R, "addtmp");
+				else if (L->getType() == Type::getInt16Ty(*TheContext))
+					return Builder->CreateAdd(L, R, "addtmp");
 			case hash_compile_time("-"):
-				return Builder->CreateSub(L, R, "subtmp");
+				if (L->getType() == Type::getFloatTy(*TheContext))
+					return Builder->CreateFSub(L, R, "subtmp");
+				else if (L->getType() == Type::getInt16Ty(*TheContext))
+					return Builder->CreateSub(L, R, "subtmp");
 			case hash_compile_time("*"):
-				return Builder->CreateMul(L, R, "multmp");
+				if (L->getType() == Type::getFloatTy(*TheContext))
+					return Builder->CreateFMul(L, R, "multmp");
+				else if (L->getType() == Type::getInt16Ty(*TheContext))
+					return Builder->CreateMul(L, R, "multmp");
 			case hash_compile_time("/"):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateSDiv(L, R, "divtmp");
@@ -373,11 +391,20 @@ Value* Node::codegen() {
 
 			switch (hash_(op)) {
 			case hash_compile_time("+"):
-				return Builder->CreateAdd(L, R, "addtmp");
+				if (L->getType() == Type::getFloatTy(*TheContext))
+					return Builder->CreateFAdd(L, R, "addtmp");
+				else if (L->getType() == Type::getInt16Ty(*TheContext))
+					return Builder->CreateAdd(L, R, "addtmp");
 			case hash_compile_time("-"):
-				return Builder->CreateSub(L, R, "subtmp");
+				if (L->getType() == Type::getFloatTy(*TheContext))
+					return Builder->CreateFSub(L, R, "subtmp");
+				else if (L->getType() == Type::getInt16Ty(*TheContext))
+					return Builder->CreateSub(L, R, "subtmp");
 			case hash_compile_time("*"):
-				return Builder->CreateMul(L, R, "multmp");
+				if (L->getType() == Type::getFloatTy(*TheContext))
+					return Builder->CreateFMul(L, R, "multmp");
+				else if (L->getType() == Type::getInt16Ty(*TheContext))
+					return Builder->CreateMul(L, R, "multmp");
 			case hash_compile_time("/"):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateSDiv(L, R, "divtmp");
@@ -468,11 +495,20 @@ Value* Node::codegen() {
 
 			switch (hash_(op)) {
 			case hash_compile_time("+"):
-				return Builder->CreateAdd(L, R, "addtmp");
+				if (L->getType() == Type::getFloatTy(*TheContext))
+					return Builder->CreateFAdd(L, R, "addtmp");
+				else if (L->getType() == Type::getInt16Ty(*TheContext))
+					return Builder->CreateAdd(L, R, "addtmp");
 			case hash_compile_time("-"):
-				return Builder->CreateSub(L, R, "subtmp");
+				if (L->getType() == Type::getFloatTy(*TheContext))
+					return Builder->CreateFSub(L, R, "subtmp");
+				else if (L->getType() == Type::getInt16Ty(*TheContext))
+					return Builder->CreateSub(L, R, "subtmp");
 			case hash_compile_time("*"):
-				return Builder->CreateMul(L, R, "multmp");
+				if (L->getType() == Type::getFloatTy(*TheContext))
+					return Builder->CreateFMul(L, R, "multmp");
+				else if (L->getType() == Type::getInt16Ty(*TheContext))
+					return Builder->CreateMul(L, R, "multmp");
 			case hash_compile_time("/"):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateSDiv(L, R, "divtmp");
@@ -542,8 +578,8 @@ Value* Node::codegen() {
 			if (childNodes[i]->type == node_type::Statements)
 				break;
 		}
-		if (i == 0)return nullptr;
-
+		if (i == 0||i==childNodes.size())return nullptr;
+		
 		Value* blockValue = childNodes[i]->codegen();
 
 		//变量列表复原
@@ -796,7 +832,7 @@ Value* Node::codegen() {
 
 		Builder->SetInsertPoint(ThenBlock);
 		thenValue = childNodes[thenIdx]->codegen();
-		if (!thenValue)return nullptr;
+		if (!thenValue)return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		Builder->CreateRet(thenValue);
 
 
@@ -804,7 +840,7 @@ Value* Node::codegen() {
 		if (elseIdx != -1) {
 			elseValue = childNodes[elseIdx]->codegen();
 		}
-		if (!elseValue)return nullptr;
+		if (!elseValue)return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		Builder->CreateRet(ElseBlock);
 
 	}

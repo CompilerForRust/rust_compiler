@@ -291,7 +291,7 @@ token_type Token::get_type()
 	return token_type::LOGICAND;
 	}
 	else if (lexeme == "->") {
-	return token_type::LOGICAND;
+	return token_type::RETURNTYPE;
 	}
 	else if (lexeme == "!") {
 	return token_type::NOT;
