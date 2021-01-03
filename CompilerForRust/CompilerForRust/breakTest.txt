@@ -1,0 +1,27 @@
+fn main()
+{
+
+	let sum=0;
+	
+	let b : i16 = 1;
+	
+  for a in 1 .. 9
+  
+  {
+	sum +=a;
+	
+	b*=sum;
+	
+	let temp = sum + b;
+	
+	if a==8
+	
+	{
+		
+		break;
+	
+	}
+	
+  }
+  
+}

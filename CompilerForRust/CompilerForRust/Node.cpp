@@ -594,14 +594,20 @@ Value* Node::codegen() {
 				if (!count(oldNames.begin(), oldNames.end(), namedValue->first))
 					NamedValues.erase(namedValue++);
 				else namedValue++;
+				//if (!NamedValues.count(oldNames[k])) {
+				//	adds.push_back(k);
+				//}
+				//k++;
+			}
+			for (k; k < oldNames.size(); k++) {
 				if (!NamedValues.count(oldNames[k])) {
-					adds.push_back(k);
+					//adds.push_back(k);
+					NamedValues[oldNames[k]] = oldAllocas[k];
 				}
-				k++;
 			}
-			for (auto add : adds) {
-				NamedValues[oldNames[add]] = oldAllocas[add];
-			}
+			//for (auto add : adds) {
+			//	NamedValues[oldNames[add]] = oldAllocas[add];
+			//}
 		}
 		return blockValue;
 	}
@@ -617,6 +623,8 @@ Value* Node::codegen() {
 			}
 			returnValue = value;
 		}
+		if (!returnValue)
+			return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		return returnValue;
 	}
 	case node_type::Statement: {
@@ -731,7 +739,7 @@ Value* Node::codegen() {
 			return nullptr;
 
 		Value* CurVar = Builder->CreateLoad(Alloca, name.c_str());
-		Value* NextVar = Builder->CreateFAdd(CurVar, StepVal, "nextvar");
+		Value* NextVar = Builder->CreateAdd(CurVar, StepVal, "nextvar");
 		Builder->CreateStore(NextVar, Alloca);
 
 		Value* EndCond = new ICmpInst(*LoopBB, ICmpInst::ICMP_SLT, NextVar, EndVal);
@@ -798,6 +806,8 @@ Value* Node::codegen() {
 		Builder->SetInsertPoint(BodyBlock);
 		if (!childNodes[bodyIdx]->codegen())return nullptr;
 		Builder->CreateBr(BodyBlock);
+		//return Constant::getNullValue(Type::getInt1Ty(*TheContext));
+		break;
 	}
 	case node_type::IfExpression: {
 		int condIdx = -1, thenIdx = -1, elseIdx = -1;
@@ -842,7 +852,7 @@ Value* Node::codegen() {
 		}
 		if (!elseValue)return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		Builder->CreateRet(ElseBlock);
-
+		break;
 	}
 	case node_type::ConditionStatement: {
 		Value* conditionStatementVal = childNodes[0]->codegen();
@@ -918,7 +928,6 @@ Value* Node::codegen() {
 
 	default:
 		return ConstantFP::get(Type::getDoubleTy(*TheContext), 1.0);
-		break;
 	}
 
 }
