@@ -1,6 +1,8 @@
 fn main(){
 	let a = 1;
 	let b = 1;
+	let c = 'a';
+	let d = true;
 	// asd
 	// sdfasdf
 	// sdfasdf
@@ -8,4 +10,6 @@ fn main(){
 		a*=b;
 		a*=30;
 		println!("{}" , a);
+		println!("{}" , c);
+		println!("{}" , d);
 }
