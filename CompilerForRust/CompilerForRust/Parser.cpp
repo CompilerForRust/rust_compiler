@@ -910,7 +910,8 @@ unique_ptr<Node> Parser::PrimaryExpression(){
 		primaryExpressionNode->addChildNode(move(child));
 	}	
 	else if (tryEat(token_type::CHARACTER) || tryEat(token_type::NUMBER) ||
-		tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::BOOL))
+		tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::BOOL)|| 
+		tryEat(token_type::TRUE)|| tryEat(token_type::FALSE))
 	{
 		child = LiteralExpression();
 		primaryExpressionNode->addChildNode(move(child));

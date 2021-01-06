@@ -1078,6 +1078,7 @@ Value* Node::codegen() {
 			Value* intFormat = Builder->CreateGlobalStringPtr("%d");
 			//输出int变量
 			Builder->CreateCall(putsFunc, { intFormat,temp });
+			Builder->CreateCall(putsFunc, Builder->CreateGlobalStringPtr("\n"));
 		}
 		else if (V->getType() == Type::getFloatTy(*TheContext)) {
 
@@ -1086,6 +1087,7 @@ Value* Node::codegen() {
 			Value* floatFormat = Builder->CreateGlobalStringPtr("%lf");
 			//输出double变量
 			Builder->CreateCall(putsFunc, { floatFormat, floatTyToDoubleTy });
+			Builder->CreateCall(putsFunc, Builder->CreateGlobalStringPtr("\n"));
 		}
 		//AllocaInst* allocDeclrInt = Builder->CreateAlloca(IntegerType::get(TheModule->getContext(), 32), NULL, "a.addr");
 		//allocDeclrInt->setAlignment((llvm::Align)4);

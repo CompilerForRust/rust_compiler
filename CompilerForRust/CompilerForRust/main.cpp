@@ -13,7 +13,7 @@ void InitMap() {
 }
 int main() {
 	InitMap();
-	string file = path[5];
+	string file = path[0];
 	Parser parser(file);
 	parser.parse();
 
