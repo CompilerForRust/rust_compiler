@@ -1,4 +1,17 @@
 #pragma once
+#include "llvm/ExecutionEngine/GenericValue.h"
+#include "llvm/ExecutionEngine/MCJIT.h"
+#include "llvm/ExecutionEngine/Interpreter.h"
+#include "llvm/ExecutionEngine/SectionMemoryManager.h"
+#include "llvm/IR/Instructions.h"
+#include <llvm/IRReader/IRReader.h>
+#include <llvm/Support/SourceMgr.h>
+#include "llvm/Support/ManagedStatic.h"
+#include "llvm/Support/TargetSelect.h"
+#include <llvm/Support/MemoryBuffer.h>
+#include "llvm/Support/raw_ostream.h"
+#include <llvm/Support/DynamicLibrary.h>
+#include "llvm/Support/Debug.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/BasicBlock.h"
@@ -247,6 +260,8 @@ public:
     Node();
     ~Node();
     void addChildNode(unique_ptr<Node> childNode);
+    void initEE();
+    void runEE();
     void Init();
     void print();
     Value* codegen();

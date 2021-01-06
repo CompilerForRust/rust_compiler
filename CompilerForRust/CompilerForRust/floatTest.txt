@@ -1,12 +1,9 @@
 fn main(){
 	let a = 1.2;
 	let b = 1.5;
-	let c = 'a';
-	 println!("aasd");
 	// asd
 	// sdfasdf
 	// sdfasdf
-		a=5.6+b;	
-		a*=1.5;
-		b=a*(5.1+6.5);
+		a=5.6+1.0;	
+		println!("{}" , a);
 }

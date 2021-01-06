@@ -962,7 +962,7 @@ unique_ptr<Node>Parser::ConditionStatement() {
 	}
 	return conditionStatementNode;
 }
-unique_ptr<Node> Parser::PRINTLN(){ 
+unique_ptr<Node> Parser::PRINTLN() {
 	unique_ptr<Node>printlnNode(new Node("", node_type::PRINTLN));
 
 	unique_ptr<Node>tokenNodePRINTLN(new Node(eat(token_type::PRINTLN), node_type::Token));
@@ -983,9 +983,18 @@ unique_ptr<Node> Parser::PRINTLN(){
 	unique_ptr<Node>tokenNodeQUOTES1(new Node(eat(token_type::QUOTES), node_type::Token));
 	printlnNode->addChildNode(move(tokenNodeQUOTES1));
 
-	//eat(token_type::COMMA);
+	eat(token_type::COMMA);
 	//auto callParameterListChild = CallParameterList();
 	//printlnNode->addChildNode(move(callParameterListChild));
+	if (tryEat(token_type::IDENTIFIER)) {
+		auto idChild = Variable();
+		printlnNode->addChildNode(move(idChild));
+	}
+	else if (tryEat(token_type::CHAR) || tryEat(token_type::NUMBER) ||
+		tryEat(token_type::DOUBLE_NUMBER) || tryEat(token_type::BOOL)) {
+		auto literChild = LiteralExpression();
+		printlnNode->addChildNode(move(literChild));
+	}
 
 	unique_ptr<Node>tokenNodeRPAR(new Node(eat(token_type::RPAR), node_type::Token));
 	printlnNode->addChildNode(move(tokenNodeRPAR));
