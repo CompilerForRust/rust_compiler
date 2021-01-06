@@ -2,26 +2,61 @@
 static std::unique_ptr<LLVMContext> TheContext;
 static std::unique_ptr<Module> TheModule;
 static std::unique_ptr<IRBuilder<>> Builder;
-static map<string, AllocaInst*> NamedValues;
-void Node::Init() {
+static map<string, AllocaInst *> NamedValues;
+static ExecutionEngine* EE = NULL;
+
+typedef void (*func_type)(void*);
+
+void Node::initEE() {
+	string ErrStr;
+	if (EE == NULL) {
+		EE = EngineBuilder(std::move(TheModule))
+			.setEngineKind(EngineKind::JIT)
+			.setErrorStr(&ErrStr)
+			.setVerifyModules(true)
+			.setMCJITMemoryManager(std::unique_ptr<RTDyldMemoryManager>())
+			.setOptLevel(CodeGenOpt::Default)
+			.create();
+	}
+	else
+		EE->addModule(std::move(TheModule));
+	if (ErrStr.length() != 0)
+		cerr << "Create Engine Error" << endl << ErrStr << endl;
+	EE->finalizeObject();
+}
+
+void Node::runEE() {
+	uint64_t func_addr = EE->getFunctionAddress("main");
+	if (func_addr == 0) {
+		printf("错误, 找不到函数: %s\n", "main");
+		return;
+	}
+	func_type func = (func_type)func_addr;
+	func(NULL); // 需要传参数时可以从这里传递
+}
+void Node::Init()
+{
 	// Open a new context and module.
 	TheContext = std::make_unique<LLVMContext>();
 	TheModule = std::make_unique<Module>("my cool jit", *TheContext);
 	// Create a new *Builder for the module.
 	Builder = std::make_unique<IRBuilder<>>(*TheContext);
 }
-void Node::print() {
+void Node::print()
+{
 	TheModule->print(errs(), nullptr);
 }
-static AllocaInst* CreateEntryBlockAlloca(Function* TheFunction,
-	const std::string& VarName,Type* type) {
-	if (!type)return nullptr;
+static AllocaInst *CreateEntryBlockAlloca(Function *TheFunction,
+																					const std::string &VarName, Type *type)
+{
+	if (!type)
+		return nullptr;
 	IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
-		TheFunction->getEntryBlock().begin());
+									 TheFunction->getEntryBlock().begin());
 	return TmpB.CreateAlloca(type, nullptr, VarName);
 }
 
-Node::Node(const string value, node_type type) 
+Node::Node(const string value, node_type type)
 {
 	this->type = type;
 	this->value = value;
@@ -34,39 +69,47 @@ Node::Node(const string value, node_type type, vector<unique_ptr<Node>> childNod
 	this->type = type;
 	this->childNodes = move(childNodes);
 }
-Node::Node() {
+Node::Node()
+{
 	childNodes.clear();
-
 };
 Node::~Node() { childNodes.clear(); };
 void Node::addChildNode(unique_ptr<Node> childNode)
 {
 	this->childNodes.push_back(move(childNode));
 }
-Value* IRError(string message) {
-	cout<<message<<endl;
+Value *IRError(string message)
+{
+	cout << message << endl;
 	return nullptr;
 }
-Type* Node::getType(string returnVal) {
-	if (returnVal == "i16" || returnVal == "u16") {
+Type *Node::getType(string returnVal)
+{
+	if (returnVal == "i16" || returnVal == "u16")
+	{
 		return Type::getInt16Ty(*TheContext);
 	}
-	else if (returnVal == "f32") {
+	else if (returnVal == "f32")
+	{
 		return Type::getFloatTy(*TheContext);
 	}
-	else if (returnVal == "bool") {
+	else if (returnVal == "bool")
+	{
 		return Type::getInt1Ty(*TheContext);
 	}
-	else {
+	else
+	{
 		return Type::getInt8Ty(*TheContext);
 	}
 }
 
-unique_ptr<Node> LogError(const char* Str) {
+unique_ptr<Node> LogError(const char *Str)
+{
 	fprintf(stderr, "Error:%s\n", Str);
 	return nullptr;
 }
-Value* LogErrorVV(const char* Str) {
+Value *LogErrorVV(const char *Str)
+{
 	LogError(Str);
 	return nullptr;
 }
@@ -78,11 +121,12 @@ typedef std::uint64_t hash_t;
 constexpr hash_t prime = 0x100000001B3ull;
 constexpr hash_t basis = 0xCBF29CE484222325ull;
 
-hash_t hash_(char const* str)
+hash_t hash_(char const *str)
 {
-	hash_t ret{ basis };
+	hash_t ret{basis};
 
-	while (*str) {
+	while (*str)
+	{
 		ret ^= *str;
 		ret *= prime;
 		str++;
@@ -90,7 +134,7 @@ hash_t hash_(char const* str)
 
 	return ret;
 }
-constexpr hash_t hash_compile_time(char const* str, hash_t last_value = basis)
+constexpr hash_t hash_compile_time(char const *str, hash_t last_value = basis)
 {
 	return *str ? hash_compile_time(str + 1, (*str ^ last_value) * prime) : last_value;
 }
@@ -102,23 +146,19 @@ Value* Node::codegen() {
 	{
 		double doubleVal = atof(value.c_str());
 		return ConstantFP::get(Type::getFloatTy(*TheContext), doubleVal);
-		break;
 	}
 	case node_type::INTEGER_LITERAL:
 	{
 		int intVal = atoi(value.c_str());
 		return ConstantInt::get(Type::getInt16Ty(*TheContext), intVal);
-		break;
 	}
 	case node_type::BOOLEAN_LITERAL:
 	{
 		int boolVal = value == "true" ? 1 : 0;
 		return ConstantInt::get(Type::getInt1Ty(*TheContext), boolVal);
-		break;
-	}	
+	}
 	case node_type::CHAR_STR_LITERAL:
 		return ConstantInt::get(Type::getInt8Ty(*TheContext), value[1]);
-		break;
 	case node_type::Program:
 	{
 		Value* functionDefinitionsChild = childNodes[0]->codegen();
@@ -133,7 +173,7 @@ Value* Node::codegen() {
 		return nullptr;
 	}
 	case node_type::FunctionDefinition: {
-		int nameIdx= -1, returnIdx = -1, argsIdx = -1, bodyIdx = -1;
+		int nameIdx = -1, returnIdx = -1, argsIdx = -1, bodyIdx = -1;
 		string nameVal, returnVal;
 		for (int i = 0; i < childNodes.size(); i++) {
 			node_type type = childNodes[i]->type;
@@ -166,7 +206,7 @@ Value* Node::codegen() {
 		else {
 			returnType = Type::getVoidTy(*TheContext);
 		}
-		
+
 		//确定参数列表
 		for (int j = 0; j < childNodes[argsIdx]->childNodes.size(); j++) {
 			node_type type = childNodes[argsIdx]->childNodes[j]->type;
@@ -196,13 +236,18 @@ Value* Node::codegen() {
 		NamedValues.clear();
 		for (auto& Arg : TheFunction->args())
 		{
-			AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, (string)Arg.getName(),Arg.getType());
+			AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, (string)Arg.getName(), Arg.getType());
 			Builder->CreateStore(&Arg, Alloca);
 			NamedValues[(string)Arg.getName()] = Alloca;
 		}
 
 		if (Value* RetVal = childNodes[bodyIdx]->codegen()) {
-			Builder->CreateRet(RetVal);
+			if (returnType == Type::getVoidTy(*TheContext))
+				Builder->CreateRetVoid();
+			else {
+				Builder->CreateRet(RetVal);
+			}
+
 			verifyFunction(*TheFunction);
 			return TheFunction;
 		}
@@ -211,7 +256,7 @@ Value* Node::codegen() {
 		return nullptr;
 	}
 
-	//改过文法之后assignmentExpression现在应该只有->vari+assignOp+BinOp这种类型了吧
+									  //改过文法之后assignmentExpression现在应该只有->vari+assignOp+BinOp这种类型了吧
 	case node_type::AssignmentExpression: {
 		Function* TheFunction = Builder->GetInsertBlock()->getParent();
 		Value* R = childNodes[2]->codegen();
@@ -232,56 +277,67 @@ Value* Node::codegen() {
 		switch (hash_(asValue))
 		{
 		case(hash_compile_time("=")):
-			return Builder->CreateStore(R, address);
+			Builder->CreateStore(R, address);
+			return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		case(hash_compile_time("*=")):
 			if (L->getType() == Type::getInt16Ty(*TheContext))
 				Tmp = Builder->CreateMul(L, R, "multmp");
 			else if (L->getType() == Type::getFloatTy(*TheContext))
 				Tmp = Builder->CreateFMul(L, R, "multmp");
-			return Builder->CreateStore(Tmp, address);
+			Builder->CreateStore(Tmp, address);
+			return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		case(hash_compile_time("/=")):
 			if (L->getType() == Type::getInt16Ty(*TheContext))
 				Tmp = Builder->CreateSDiv(L, R, "divtmp");
 			if (L->getType() == Type::getFloatTy(*TheContext))
 				Tmp = Builder->CreateFDiv(L, R, "divtmp");
-			return Builder->CreateStore(Tmp, address);
+			Builder->CreateStore(Tmp, address);
+			return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		case(hash_compile_time("%=")):
 			Tmp = Builder->CreateSRem(L, R, "remtmp");
-			return Builder->CreateStore(Tmp, address);
+			Builder->CreateStore(Tmp, address);
+			return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		case(hash_compile_time("+=")):
 			if (L->getType() == Type::getInt16Ty(*TheContext))
 				Tmp = Builder->CreateAdd(L, R, "addtmp");
 			else if (L->getType() == Type::getFloatTy(*TheContext))
 				Tmp = Builder->CreateFAdd(L, R, "addtmp");
-			return Builder->CreateStore(Tmp, address);
+			Builder->CreateStore(Tmp, address);
+			return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		case(hash_compile_time("-=")):
 			if (L->getType() == Type::getInt16Ty(*TheContext))
 				Tmp = Builder->CreateSub(L, R, "subtmp");
 			else if (L->getType() == Type::getFloatTy(*TheContext))
 				Tmp = Builder->CreateFSub(L, R, "subtmp");
-			return Builder->CreateStore(Tmp, address);
+			Builder->CreateStore(Tmp, address);
+			return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		case(hash_compile_time("<<=")):
 			Tmp = Builder->CreateShl(L, R, "shltmp");
-			return Builder->CreateStore(Tmp, address);
+			Builder->CreateStore(Tmp, address);
+			return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		case(hash_compile_time(">>=")):
 			Tmp = Builder->CreateLShr(L, R, "LShrtmp");
-			return Builder->CreateStore(Tmp, address);
+			Builder->CreateStore(Tmp, address);
+			return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		case(hash_compile_time("&=")):
 			Tmp = Builder->CreateAnd(L, R, "andtmp");
-			return Builder->CreateStore(Tmp, address);
+			Builder->CreateStore(Tmp, address);
+			return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		case(hash_compile_time("^=")):
 			Tmp = Builder->CreateXor(L, R, "xortmp");
-			return Builder->CreateStore(Tmp, address);
+			Builder->CreateStore(Tmp, address);
+			return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		case(hash_compile_time("|=")):
 			Tmp = Builder->CreateOr(L, R, "ortmp");
-			return Builder->CreateStore(Tmp, address);
+			Builder->CreateStore(Tmp, address);
+			return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 		default:
 			return LogErrorVV("invalid assignment operator");
 
 		}
 
 	}
-	//后来我发现LHS可以再分LHS OP RHS ，不知道还有没有其他情况，目前操作就是加个判断看看是什么，感觉分的时候应该有一个binaryexpression会更好看一些，但好像因为左递归的问题去掉了
+										//后来我发现LHS可以再分LHS OP RHS ，不知道还有没有其他情况，目前操作就是加个判断看看是什么，感觉分的时候应该有一个binaryexpression会更好看一些，但好像因为左递归的问题去掉了
 	case node_type::LHS: {
 		node_type firstType = childNodes[0]->type;
 		string returnValue;
@@ -298,65 +354,83 @@ Value* Node::codegen() {
 			switch (hash_(op)) {
 			case hash_compile_time("+"):
 				if (L->getType() == Type::getFloatTy(*TheContext))
-					return Builder->CreateFAdd(L, R, "addtmp");
+					Builder->CreateFAdd(L, R, "addtmp");
 				else if (L->getType() == Type::getInt16Ty(*TheContext))
-					return Builder->CreateAdd(L, R, "addtmp");
+					Builder->CreateAdd(L, R, "addtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("-"):
 				if (L->getType() == Type::getFloatTy(*TheContext))
-					return Builder->CreateFSub(L, R, "subtmp");
+					Builder->CreateFSub(L, R, "subtmp");
 				else if (L->getType() == Type::getInt16Ty(*TheContext))
-					return Builder->CreateSub(L, R, "subtmp");
+					Builder->CreateSub(L, R, "subtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("*"):
 				if (L->getType() == Type::getFloatTy(*TheContext))
-					return Builder->CreateFMul(L, R, "multmp");
+					Builder->CreateFMul(L, R, "multmp");
 				else if (L->getType() == Type::getInt16Ty(*TheContext))
-					return Builder->CreateMul(L, R, "multmp");
+					Builder->CreateMul(L, R, "multmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("/"):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
-					return Builder->CreateSDiv(L, R, "divtmp");
+					Builder->CreateSDiv(L, R, "divtmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
-					return Builder->CreateFDiv(L, R, "divtmp");
+					Builder->CreateFDiv(L, R, "divtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("%"):
-				return Builder->CreateSRem(L, R, "remtmp");
+				Builder->CreateSRem(L, R, "remtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("<<"):
-				return Builder->CreateShl(L, R, "shltmp");
+				Builder->CreateShl(L, R, "shltmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time(">>"):
-				return Builder->CreateLShr(L, R, "lshrtmp");
+				Builder->CreateLShr(L, R, "lshrtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time(">"):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateICmpUGT(L, R, "ugttmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
 					return Builder->CreateFCmpUGT(L, R, "ugttmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time(">="):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateICmpUGE(L, R, "ugetmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
 					return Builder->CreateFCmpUGE(L, R, "ugetmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("<"):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateICmpULT(L, R, "ulttmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
 					return Builder->CreateFCmpULT(L, R, "ulttmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("<="):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateICmpULE(L, R, "uletmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
 					return Builder->CreateFCmpULE(L, R, "uletmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("||"):
 				return Builder->CreateOr(L, R, "ortmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("&&"):
 				return Builder->CreateAnd(L, R, "andtmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("=="):
 				return Builder->CreateICmpEQ(L, R, "equtmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("!="):
 				return Builder->CreateICmpNE(L, R, "neqtmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("^"):
 				return Builder->CreateXor(L, R, "xortmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 				//按位与或找不到函数就先用与或凑合了
 			case hash_compile_time("|"):
 				return Builder->CreateOr(L, R, "ortmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("&"):
 				return Builder->CreateAnd(L, R, "andtmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 
 
 				//二进制表达式只有！没有写，考虑了一下不应该在这里去写
@@ -392,65 +466,83 @@ Value* Node::codegen() {
 			switch (hash_(op)) {
 			case hash_compile_time("+"):
 				if (L->getType() == Type::getFloatTy(*TheContext))
-					return Builder->CreateFAdd(L, R, "addtmp");
+					Builder->CreateFAdd(L, R, "addtmp");
 				else if (L->getType() == Type::getInt16Ty(*TheContext))
-					return Builder->CreateAdd(L, R, "addtmp");
+					Builder->CreateAdd(L, R, "addtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("-"):
 				if (L->getType() == Type::getFloatTy(*TheContext))
-					return Builder->CreateFSub(L, R, "subtmp");
+					Builder->CreateFSub(L, R, "subtmp");
 				else if (L->getType() == Type::getInt16Ty(*TheContext))
-					return Builder->CreateSub(L, R, "subtmp");
+					Builder->CreateSub(L, R, "subtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("*"):
 				if (L->getType() == Type::getFloatTy(*TheContext))
-					return Builder->CreateFMul(L, R, "multmp");
+					Builder->CreateFMul(L, R, "multmp");
 				else if (L->getType() == Type::getInt16Ty(*TheContext))
-					return Builder->CreateMul(L, R, "multmp");
+					Builder->CreateMul(L, R, "multmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("/"):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
-					return Builder->CreateSDiv(L, R, "divtmp");
+					Builder->CreateSDiv(L, R, "divtmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
-					return Builder->CreateFDiv(L, R, "divtmp");
+					Builder->CreateFDiv(L, R, "divtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("%"):
-				return Builder->CreateSRem(L, R, "remtmp");
+				Builder->CreateSRem(L, R, "remtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("<<"):
-				return Builder->CreateShl(L, R, "shltmp");
+				Builder->CreateShl(L, R, "shltmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time(">>"):
-				return Builder->CreateLShr(L, R, "lshrtmp");
+				Builder->CreateLShr(L, R, "lshrtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time(">"):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateICmpUGT(L, R, "ugttmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
 					return Builder->CreateFCmpUGT(L, R, "ugttmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time(">="):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateICmpUGE(L, R, "ugetmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
 					return Builder->CreateFCmpUGE(L, R, "ugetmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("<"):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateICmpULT(L, R, "ulttmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
 					return Builder->CreateFCmpULT(L, R, "ulttmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("<="):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateICmpULE(L, R, "uletmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
 					return Builder->CreateFCmpULE(L, R, "uletmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("||"):
 				return Builder->CreateOr(L, R, "ortmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("&&"):
 				return Builder->CreateAnd(L, R, "andtmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("=="):
 				return Builder->CreateICmpEQ(L, R, "equtmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("!="):
 				return Builder->CreateICmpNE(L, R, "neqtmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("^"):
 				return Builder->CreateXor(L, R, "xortmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 				//按位与或找不到函数就先用与或凑合了
 			case hash_compile_time("|"):
 				return Builder->CreateOr(L, R, "ortmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("&"):
 				return Builder->CreateAnd(L, R, "andtmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 
 
 				//二进制表达式只有！没有写，考虑了一下不应该在这里去写
@@ -473,7 +565,7 @@ Value* Node::codegen() {
 			return childNodes[1]->codegen();
 		}
 		//2.literalexpression或者变量
-		else 
+		else
 		{
 			return childNodes[0]->codegen();
 		}
@@ -489,7 +581,7 @@ Value* Node::codegen() {
 			Value* R = childNodes[2]->codegen();
 			if (!L || !R)
 				return nullptr;
-			
+
 			string Op = childNodes[1]->value;
 			const char* op = Op.data();
 
@@ -499,70 +591,89 @@ Value* Node::codegen() {
 					return Builder->CreateFAdd(L, R, "addtmp");
 				else if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateAdd(L, R, "addtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("-"):
 				if (L->getType() == Type::getFloatTy(*TheContext))
-					return Builder->CreateFSub(L, R, "subtmp");
+					Builder->CreateFSub(L, R, "subtmp");
 				else if (L->getType() == Type::getInt16Ty(*TheContext))
-					return Builder->CreateSub(L, R, "subtmp");
+					Builder->CreateSub(L, R, "subtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("*"):
 				if (L->getType() == Type::getFloatTy(*TheContext))
-					return Builder->CreateFMul(L, R, "multmp");
+					Builder->CreateFMul(L, R, "multmp");
 				else if (L->getType() == Type::getInt16Ty(*TheContext))
-					return Builder->CreateMul(L, R, "multmp");
+					Builder->CreateMul(L, R, "multmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("/"):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
-					return Builder->CreateSDiv(L, R, "divtmp");
+					Builder->CreateSDiv(L, R, "divtmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
-					return Builder->CreateFDiv(L, R, "divtmp");
+					Builder->CreateFDiv(L, R, "divtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("%"):
-				return Builder->CreateSRem(L, R, "remtmp");
+				Builder->CreateSRem(L, R, "remtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("<<"):
-				return Builder->CreateShl(L, R, "shltmp");
+				Builder->CreateShl(L, R, "shltmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time(">>"):
-				return Builder->CreateLShr(L, R, "lshrtmp");
+				Builder->CreateLShr(L, R, "lshrtmp");
+				return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time(">"):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateICmpUGT(L, R, "ugttmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
 					return Builder->CreateFCmpUGT(L, R, "ugttmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time(">="):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateICmpUGE(L, R, "ugetmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
 					return Builder->CreateFCmpUGE(L, R, "ugetmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("<"):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateICmpULT(L, R, "ulttmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
 					return Builder->CreateFCmpULT(L, R, "ulttmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("<="):
 				if (L->getType() == Type::getInt16Ty(*TheContext))
 					return Builder->CreateICmpULE(L, R, "uletmp");
 				if (L->getType() == Type::getFloatTy(*TheContext))
 					return Builder->CreateFCmpULE(L, R, "uletmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("||"):
 				return Builder->CreateOr(L, R, "ortmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("&&"):
 				return Builder->CreateAnd(L, R, "andtmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("=="):
 				return Builder->CreateICmpEQ(L, R, "equtmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("!="):
 				return Builder->CreateICmpNE(L, R, "neqtmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("^"):
 				return Builder->CreateXor(L, R, "xortmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 				//按位与或找不到函数就先用与或凑合了
 			case hash_compile_time("|"):
 				return Builder->CreateOr(L, R, "ortmp");
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 			case hash_compile_time("&"):
 				return Builder->CreateAnd(L, R, "andtmp");
-				//按位与或找不到函数就先用与或了
-		
+				//return Constant::getNullValue(Type::getInt16Ty(*TheContext));
+
+
+				//二进制表达式只有！没有写，考虑了一下不应该在这里去写
 
 			default:
 				return LogErrorVV("invalid binary operator");
 			}
 		}
-		
+
 	}
 
 	case node_type::BlockExpression: {
@@ -570,16 +681,16 @@ Value* Node::codegen() {
 		//保存变量列表
 		vector<string>oldNames;
 		vector<AllocaInst*>oldAllocas;
-		for (auto k = NamedValues.begin(); k != NamedValues.end();k++) {
+		for (auto k = NamedValues.begin(); k != NamedValues.end(); k++) {
 			oldNames.push_back(k->first);
 			oldAllocas.push_back(k->second);
 		}
-		for (i ; i < childNodes.size(); i++) {
+		for (i; i < childNodes.size(); i++) {
 			if (childNodes[i]->type == node_type::Statements)
 				break;
 		}
-		if (i == 0||i==childNodes.size())return nullptr;
-		
+		if (i == 0 || i == childNodes.size())return nullptr;
+
 		Value* blockValue = childNodes[i]->codegen();
 
 		//变量列表复原
@@ -620,12 +731,17 @@ Value* Node::codegen() {
 			if (type == node_type::Statement || type == node_type::IfExpression
 				|| type == node_type::CycleExpression) {
 				value = childNodes[idx]->codegen();
+				node_type typeChild = childNodes[idx]->childNodes[0]->type;
+				if (typeChild == node_type::ReturnExpression || typeChild == node_type::BreakExpression) {
+					return value;
+				}
 			}
 			returnValue = value;
 		}
 		if (!returnValue)
-			return Constant::getNullValue(Type::getInt16Ty(*TheContext));
-		return returnValue;
+			return nullptr;
+		else
+			return returnValue;
 	}
 	case node_type::Statement: {
 		return childNodes[0]->codegen();
@@ -683,7 +799,7 @@ Value* Node::codegen() {
 		Builder->CreateStore(init, Alloca);
 		NamedValues[nameVal] = Alloca;
 
-		return nullptr;
+		return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 	}
 	case node_type::Variable: {
 		Value* V = NamedValues[value];
@@ -712,7 +828,7 @@ Value* Node::codegen() {
 		}
 		Function* TheFunction = Builder->GetInsertBlock()->getParent();
 
-		AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, name,Type::getInt16Ty(*TheContext));
+		AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, name, Type::getInt16Ty(*TheContext));
 
 		Value* StartVal = childNodes[starIdx]->codegen();
 		if (!StartVal)
@@ -789,7 +905,7 @@ Value* Node::codegen() {
 		Builder->CreateCondBr(CondVal, BodyBlock, AfterBlcok);
 
 		Builder->SetInsertPoint(AfterBlcok);
-		return Builder->CreateRetVoid();
+		return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 
 	}
 	case node_type::LoopExpression: {
@@ -806,8 +922,7 @@ Value* Node::codegen() {
 		Builder->SetInsertPoint(BodyBlock);
 		if (!childNodes[bodyIdx]->codegen())return nullptr;
 		Builder->CreateBr(BodyBlock);
-		//return Constant::getNullValue(Type::getInt1Ty(*TheContext));
-		break;
+		return Constant::getNullValue(Type::getInt16Ty(*TheContext));
 	}
 	case node_type::IfExpression: {
 		int condIdx = -1, thenIdx = -1, elseIdx = -1;
@@ -829,21 +944,23 @@ Value* Node::codegen() {
 
 		condValue = childNodes[condIdx]->codegen();
 
-		
+
 		condValue = Builder->CreateICmpNE(condValue,
 			ConstantInt::get(Type::getInt1Ty(*TheContext), 1), "cond");
 		Function* TheFunction = Builder->GetInsertBlock()->getParent();
-        //基本块
+		//基本块
 		BasicBlock* ThenBlock = BasicBlock::Create(*TheContext, "ThenBlock", TheFunction);
 		BasicBlock* ElseBlock = BasicBlock::Create(*TheContext, "ElseBlock", TheFunction);
-		
+		BasicBlock* MergeBlock = BasicBlock::Create(*TheContext, "MergeBlock", TheFunction);
 
 		Builder->CreateCondBr(condValue, ThenBlock, ElseBlock);
 
 		Builder->SetInsertPoint(ThenBlock);
 		thenValue = childNodes[thenIdx]->codegen();
 		if (!thenValue)return Constant::getNullValue(Type::getInt16Ty(*TheContext));
-		Builder->CreateRet(thenValue);
+		Builder->CreateBr(MergeBlock);
+
+		ThenBlock = Builder->GetInsertBlock();
 
 
 		Builder->SetInsertPoint(ElseBlock);
@@ -851,8 +968,18 @@ Value* Node::codegen() {
 			elseValue = childNodes[elseIdx]->codegen();
 		}
 		if (!elseValue)return Constant::getNullValue(Type::getInt16Ty(*TheContext));
-		Builder->CreateRet(ElseBlock);
-		break;
+		Builder->CreateBr(MergeBlock);
+
+		ElseBlock = Builder->GetInsertBlock();
+
+		Builder->SetInsertPoint(MergeBlock);
+
+		PHINode* PN = Builder->CreatePHI(Type::getInt16Ty(*TheContext), 2, "iftmp");
+
+		PN->addIncoming(thenValue, ThenBlock);
+		PN->addIncoming(elseValue, ElseBlock);
+
+		return PN;
 	}
 	case node_type::ConditionStatement: {
 		Value* conditionStatementVal = childNodes[0]->codegen();
@@ -890,13 +1017,13 @@ Value* Node::codegen() {
 				Args.push_back(childNodes[argsIdx]->childNodes[k]->childNodes[0]->codegen());
 			}
 		}
-		
+
 		Function* Callee = TheModule->getFunction(name);
 		if (!Callee)return IRError("Function not exist");
 		if (Args.size() != Callee->arg_size())
 			return IRError("Parameter number mismatch");
 		int j = 0;
-		for (auto &calleeArg : Callee->args()) {
+		for (auto& calleeArg : Callee->args()) {
 			if (calleeArg.getType() != Args[j]->getType())
 				return IRError("Parameter type mismatch");
 			j++;
@@ -920,10 +1047,48 @@ Value* Node::codegen() {
 				returnVal = childNodes[i]->codegen();
 			}
 		}
-		return Builder->CreateRet(returnVal);
+		return returnVal;
 	}
 	case node_type::BreakExpression: {
-		return Builder->CreateRetVoid();
+		return  nullptr;
+	}
+	case node_type::PRINTLN: {
+		Value* V;
+		for (int i = 0; i < childNodes.size(); i++) {
+			node_type type = childNodes[i]->type;
+			if (type == node_type::Variable || type == node_type::LiteralExpression) {
+				V = childNodes[i]->codegen();
+				break;
+			}
+		}
+		//先声明printf函数
+		std::vector<llvm::Type*> putsArgs;
+		putsArgs.push_back(Builder->getInt8Ty()->getPointerTo());
+		llvm::ArrayRef<llvm::Type*>  argsRef(putsArgs);
+
+		llvm::FunctionType* putsType =
+			llvm::FunctionType::get(Builder->getInt32Ty(), argsRef, true);
+		auto putsFunc = TheModule->getOrInsertFunction("printf", putsType);
+
+		if (V->getType() == Type::getInt16Ty(*TheContext) ||
+			V->getType() == Type::getInt8Ty(*TheContext) ||
+			V->getType() == Type::getInt1Ty(*TheContext)) {
+
+			//输出格式
+			Value* intFormat = Builder->CreateGlobalStringPtr("%d");
+			//输出int变量
+			Builder->CreateCall(putsFunc, { intFormat,V });
+		}
+		else if (V->getType() == Type::getFloatTy(*TheContext)) {
+
+			//必须将float转成double类型
+			Value* floatTyToDoubleTy = Builder->CreateFPExt(V, Type::getDoubleTy(TheModule->getContext()));
+			Value* floatFormat = Builder->CreateGlobalStringPtr("%lf");
+			//输出double变量
+			Builder->CreateCall(putsFunc, { floatFormat, floatTyToDoubleTy });
+		}
+
+		return Constant::getNullValue(Type::getInt32Ty(*TheContext));
 	}
 
 	default:
@@ -931,4 +1096,3 @@ Value* Node::codegen() {
 	}
 
 }
-
