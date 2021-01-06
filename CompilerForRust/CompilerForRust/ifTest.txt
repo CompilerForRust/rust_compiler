@@ -1,13 +1,13 @@
 fn main(){
-	let a = 1;
+	let a = 10;
 	let b = 1;
 	let c = 'a';
 	//test comment
 	if a==1{
 		a=5+b;	
-		a*=9;
-		b=a*(5+6);}
-		else{
+		a*=54;
 		b=5;}
-		println!("{}" , a);
+		else{
+		b=6;}
+		println!("{}" , b);
 }
